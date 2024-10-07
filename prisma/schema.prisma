@@ -1,0 +1,40 @@
+model Celebrity {
+  id            Int    @id @default(autoincrement())
+  name          String
+  dp            String
+  socialmediaId String @unique
+  posts         Post[] // Relation to the 'Post' model
+
+  @@index([name])
+}
+
+model Product {
+  id          Int           @id @default(autoincrement())
+  brandname   String
+  seoname     String
+  category    String
+  shop        String
+  link        String        @unique
+  imageUrl    String        @unique
+  PostProduct PostProduct[]
+  @@index([shop, category])
+}
+
+model Post {
+  id          Int           @id @default(autoincrement())
+  celebrityId Int
+  imageUrl    String         // URL of the celebrity's image (unique to each post)
+  date        DateTime       @default(now())
+  products    PostProduct[]  // Relation to the 'PostProduct' model
+  Celebrity   Celebrity      @relation(fields: [celebrityId], references: [id])
+
+  @@index([celebrityId])
+}
+
+model PostProduct {
+  id        Int     @id @default(autoincrement())
+  postId    Int
+  productId Int
+  Post      Post    @relation(fields: [postId], references: [id])
+  Product   Product @relation(fields: [productId], references: [id])
+}
