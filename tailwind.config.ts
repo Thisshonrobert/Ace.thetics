@@ -8,6 +8,9 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+	fontFamily:{
+		signature:['Great Vibes']
+	  },
   	extend: {
   		colors: {
   			background: 'hsl(var(--background))',
