@@ -9,7 +9,8 @@ const config: Config = {
   ],
   theme: {
 	fontFamily:{
-		signature:['Great Vibes']
+		signature:['Great Vibes'],
+		poppins:['Poppins']
 	  },
   	extend: {
   		colors: {

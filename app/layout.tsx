@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import NavBar from "./MyComponent/NavBar";
-import { Sidebar } from "./MyComponent/Sidebar";
+import AuthProvider from "./auth/AuthProvider";
+import Layout from "./MyComponent/layout";
 
+// Local font imports
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -17,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "CelebrityWears",
-  description: "decodes what celebrities wore",
+  description: "Decodes what celebrities wore",
 };
 
 export default function RootLayout({
@@ -30,11 +31,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NavBar/>
-        <Sidebar />
-        <main>
-        {children}
-        </main>
+        <AuthProvider>
+          <Layout />
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );
