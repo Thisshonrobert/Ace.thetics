@@ -13,13 +13,13 @@ export default function RightSidebar({ isOpen, onClose }: any) {
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-[250px] sm:w-[300px] p-0">
         <div className="h-full bg-white overflow-y-auto p-4 mt-6">
-          {/* Search bar with a search icon and outline-none */}
+          
           <div className="relative mb-4 ">
             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="search"
               placeholder="Search"
-              className="pl-10 outline-none border border-gray-300 rounded-md w-full "
+              className="pl-10 outline-none border border-gray-300 rounded-md w-full h-10"
             />
           </div>
 

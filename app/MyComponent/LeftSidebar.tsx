@@ -1,11 +1,13 @@
-'use client';
-import { Star, Gift, Heart, List, ShoppingBag, Tag } from "lucide-react";
+"use client";
+
+import { Star, Gift, Heart, List, ShoppingBag, Tag, Settings } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { FaAngleRight } from "react-icons/fa"; // Import the right arrow icon
+import { FaAngleRight } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const menuItems = [
   { icon: Star, label: "Stars" },
@@ -16,10 +18,10 @@ const menuItems = [
   { icon: Tag, label: "Brands" },
 ];
 
-
-export default function LeftSidebar({ isOpen, onClose }: any) {
+export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
-  const session = useSession();
+  const { data: session } = useSession();
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="w-[240px] sm:w-[300px] p-0">
@@ -27,11 +29,11 @@ export default function LeftSidebar({ isOpen, onClose }: any) {
           {/* Top Section: Logo and Title */}
           <div className="flex flex-col items-center p-4">
             <Image
-              src="/Acethetics.png" // Path to your image
-              alt="Ace.Thetics logo" // Alternative text for accessibility
-              width={40} // Width of the image
-              height={40} // Height of the image
-              className="rounded-md" // Additional styles
+              src="/Acethetics.png"
+              alt="Ace.Thetics logo"
+              width={40}
+              height={40}
+              className="rounded-md"
             />
             <div className="text-center mt-2">
               <span className="block text-sm font-semibold">Ace.Thetics</span>
@@ -51,7 +53,6 @@ export default function LeftSidebar({ isOpen, onClose }: any) {
                     <item.icon className="h-5 w-5 mr-3" />
                     <span className="mr-2">{item.label}</span>
                   </div>
-
                   <FaAngleRight className="h-5 w-5 text-gray-500" />
                 </button>
               </li>
@@ -59,14 +60,30 @@ export default function LeftSidebar({ isOpen, onClose }: any) {
           </ul>
 
           {/* Bottom Section: Register and Sign In */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="text-center font-poppins font-medium mb-2">
-              Register to save outfits to your Wishlist, and view price drops
+          {!session && (
+            <div className="p-4 border-t border-gray-200">
+              <div className="text-center font-poppins font-medium mb-2">
+                Register to save outfits to your Wishlist, and view price drops
+              </div>
+              <Button
+                onClick={() => router.push("/api/auth/signin")}
+                className="h-10 w-full"
+              >
+                Sign in
+              </Button>
             </div>
-            <Button onClick={()=>router.push(`${process.env.NEXTAUTH_URL='http://localhost:3000'}/api/auth/signin/`)} className="h-10 w-full">
-              Sign in
-            </Button>
-          </div>
+          )}
+          {session && (
+            <div className="flex items-center justify-between p-4 border-t border-gray-200">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={session.user?.image || undefined} alt={session.user?.name || 'User'} />
+                <AvatarFallback>{session.user?.name?.[0] || 'U'}</AvatarFallback>
+              </Avatar>
+              <Button variant="ghost" size="icon" className="h-10 w-10">
+                <Settings className="h-6 w-6" />
+              </Button>
+            </div>
+          )}
         </nav>
       </SheetContent>
     </Sheet>
