@@ -24,7 +24,7 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
   const [liked, setLiked] = useState(false)
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-white rounded-3xl overflow-hidden shadow-lg">
+    <div className="w-full max-w-3xl  mx-auto bg-white rounded-3xl overflow-hidden shadow-lg mt-6 ">
       {/* Desktop View */}
       <div className="hidden md:flex">
         <div className="w-1/2">
@@ -40,7 +40,7 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <Image
-                src={`/placeholder.svg?height=40&width=40`}
+                src={`/luffy.jpg?height=40&width=40`}
                 alt={celebrityName}
                 width={40}
                 height={40}
@@ -59,7 +59,7 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
             {products.map((product) => (
               <div key={product.id} className="flex items-center space-x-4 p-2 hover:bg-gray-100 rounded-lg">
                 <Image
-                  src={product.image}
+                  src={"/luffy.jpg"}
                   alt={product.name}
                   width={60}
                   height={60}
@@ -113,7 +113,7 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
             {products.map((product) => (
               <div key={product.id} className="flex-shrink-0 w-32">
                 <Image
-                  src={product.image}
+                  src={ "/luffy.jpg"}
                   alt={product.name}
                   width={128}
                   height={128}
