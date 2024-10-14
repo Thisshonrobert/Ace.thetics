@@ -6,10 +6,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' })
   }
 
-  const { name, socialId, dpImage, celebImages, productImages, ...productData } = req.body
+  const { name, socialId, dpImage, celebImages, products } = req.body
 
-  if (!name || !socialId || !dpImage) {
-    return res.status(400).json({ message: 'Name, social ID, and DP image are required' })
+  if (!name || !socialId || !dpImage || !celebImages || !products) {
+    return res.status(400).json({ message: 'Missing required fields' })
   }
 
   try {
@@ -27,12 +27,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         imageUrl: celebImages[0], // Assuming the first image is the main post image
         Liked: false, // Set the initial Liked status to false
         products: {
-          create: productImages.map((imageUrl: string) => ({
+          create: products.map((product: any) => ({
             Product: {
               create: {
-                ...productData,
-                imageUrl,
+                brandname: product.brandName,
+                seoname: product.seoName,
+                category: product.category,
                 whishList: false, // Set initial wishlist status to false
+                shop: product.shop,
+                link: product.link,
+                imageUrl: product.imageUrl,
               },
             },
           })),
