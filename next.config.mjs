@@ -7,6 +7,7 @@ const nextConfig = {
       'm.media-amazon.com', 
       'in.danielwellington.com', 
       'mokobara.com',
+      'your-s3-bucket-name.s3.amazonaws.com'
     ],
 }
 }
