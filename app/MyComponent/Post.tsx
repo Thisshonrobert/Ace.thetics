@@ -6,10 +6,9 @@ import { useState } from 'react'
 
 interface Product {
   id: number
-  name: string
-  brand: string
-  description: string
-  price: number
+  brandname: string
+  seoname: string
+  shop: string
   image: string
 }
 
@@ -60,15 +59,15 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
               <div key={product.id} className="flex items-center space-x-4 p-2 hover:bg-gray-100 rounded-lg">
                 <Image
                   src={"/luffy.jpg"}
-                  alt={product.name}
+                  alt={product.seoname}
                   width={60}
                   height={60}
                   className="rounded-md"
                 />
                 <div className="flex-grow">
-                  <h3 className="font-bold">{product.brand}</h3>
-                  <p className="text-sm text-gray-600">{product.description}</p>
-                  <p className="font-semibold">${product.price}</p>
+                  <h3 className="font-bold">{product.brandname}</h3>
+                  <p className="text-sm text-gray-600">{product.seoname}</p>
+                  <p className="font-medium">shops: {product.shop}</p>
                 </div>
                 <div className="text-gray-400">›</div>
               </div>
@@ -114,13 +113,13 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
               <div key={product.id} className="flex-shrink-0 w-32">
                 <Image
                   src={ "/luffy.jpg"}
-                  alt={product.name}
+                  alt={product.seoname}
                   width={128}
                   height={128}
                   className="rounded-md w-full h-32 object-cover"
                 />
-                <p className="mt-2 font-semibold text-sm truncate">{product.brand}</p>
-                <p className="text-sm text-gray-600">${product.price}</p>
+                <p className="mt-2 font-semibold text-sm truncate">{product.brandname}</p>
+                <p className="text-sm text-gray-600">shops: {product.shop}</p>
               </div>
             ))}
           </div>

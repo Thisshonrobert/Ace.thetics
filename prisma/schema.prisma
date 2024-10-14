@@ -90,6 +90,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
+  gender        String?
   likedPost     Post[]
   wishList      Product[]
   accounts      Account[]
