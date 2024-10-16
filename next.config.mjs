@@ -2,12 +2,10 @@
 const nextConfig = {
   images: {
     domains: [
-      'www.google.com', 
-      'via.placeholder.com', 
+      'www.google.com',  
       'm.media-amazon.com', 
-      'in.danielwellington.com', 
-      'mokobara.com',
-      'your-s3-bucket-name.s3.amazonaws.com'
+      'your-s3-bucket-name.s3.amazonaws.com',
+      process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN.replace('https://', '')
     ],
 }
 }

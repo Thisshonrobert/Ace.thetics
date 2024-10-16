@@ -8,18 +8,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { name, socialId, dpImage, celebImages, products } = req.body
 
-  if (!name || !socialId || !dpImage || !celebImages || !products) {
+  if (!name || !celebImages || !products) {
     return res.status(400).json({ message: 'Missing required fields' })
   }
 
   try {
-    const celebrity = await prisma.celebrity.create({
-      data: {
-        name,
-        socialmediaId: socialId,
-        dp: dpImage,
-      },
+    // Check if the celebrity already exists
+    let celebrity = await prisma.celebrity.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
     })
+
+    if (celebrity) {
+      // Update existing celebrity
+      celebrity = await prisma.celebrity.update({
+        where: { id: celebrity.id },
+        data: {
+          name,
+        },
+      })
+    } else {
+      // Create new celebrity
+      if (!socialId || !dpImage) {
+        return res.status(400).json({ message: 'Missing required fields for new celebrity' })
+      }
+      celebrity = await prisma.celebrity.create({
+        data: {
+          name,
+          socialmediaId: socialId,
+          dp: dpImage,
+        },
+      })
+    }
 
     const post = await prisma.post.create({
       data: {
@@ -53,9 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.status(201).json({ celebrity, post })
   } catch (error) {
-    console.error('Error creating celebrity:', error)
+    console.error('Error creating/updating celebrity:', error)
     res.status(500).json({ message: 'Internal server error' })
-  } finally {
-    await prisma.$disconnect()
   }
 }
