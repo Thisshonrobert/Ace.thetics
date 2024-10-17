@@ -1,7 +1,5 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import formidable from "formidable";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -11,16 +9,16 @@ const s3Client = new S3Client({
   },
 });
 
-export async function uploadToS3(file: formidable.File, type: 'celeb' | 'product' | 'dp'): Promise<string> {
-  const fileContent = fs.readFileSync(file.filepath);
-  const fileExtension = file.originalFilename?.split('.').pop() || 'jpg';
+export async function uploadToS3(file: File, type: 'celeb' | 'product' | 'dp'): Promise<string> {
+  const fileBuffer = await file.arrayBuffer();
+  const fileExtension = file.name.split('.').pop() || 'jpg';
   const key = `${type}/${uuidv4()}.${fileExtension}`;
 
   const params = {
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
     Key: key,
-    Body: fileContent,
-    ContentType: file.mimetype!,
+    Body: Buffer.from(fileBuffer),
+    ContentType: file.type,
   };
 
   try {
@@ -28,6 +26,6 @@ export async function uploadToS3(file: formidable.File, type: 'celeb' | 'product
     return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
   } catch (error) {
     console.error('Error uploading to S3:', error);
-    throw new Error('Failed to upload file to S3');
+    throw new Error(`Failed to upload file to S3: ${(error as Error).message}`);
   }
 }

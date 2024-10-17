@@ -130,3 +130,26 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
     </div>
   )
 }
+
+{/* <CloudFrontImage
+            src={celebrityImage}
+            alt={celebrityName}
+            width={500}
+            height={480}
+            className="object-cover w-full h-[480px]"
+          /> */}
+
+          // <CloudFrontImage
+          //       src={`profile/${celebrityName}.jpg`}
+          //       alt={celebrityName}
+          //       width={32}
+          //       height={32}
+          //       className="rounded-full mr-2"
+          //     />
+          // <CloudFrontImage
+          //         src={product.image}
+          //         alt={product.seoname}
+          //         width={48}
+          //         height={48}
+          //         className="rounded-md"
+          //       />
