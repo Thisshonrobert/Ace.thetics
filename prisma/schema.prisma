@@ -13,7 +13,7 @@ model Celebrity {
   id            Int    @id @default(autoincrement())
   name          String
   dp            String
-  socialmediaId String @unique
+  socialmediaId String 
   posts         Post[] // Relation to the 'Post' model
 
   @@index([name])
@@ -26,7 +26,7 @@ model Product {
   category    String
   whishList   Boolean
   shop        String
-  link        String        @unique
+  link        String        
   imageUrl    String        @unique
   PostProduct PostProduct[]
   @@index([shop, category])

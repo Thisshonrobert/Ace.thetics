@@ -6,5 +6,6 @@ type CloudFrontImageProps = Omit<ImageProps, 'loader'> & {
 }
 
 export default function CloudFrontImage({ src, ...props }: CloudFrontImageProps) {
-  return <Image {...props} src={src} loader={cloudFrontLoader} />
+  const imagePath = src.replace(/^https?:\/\/[^\/]+\//, '');
+  return <Image {...props} src={imagePath} loader={cloudFrontLoader} />
 }

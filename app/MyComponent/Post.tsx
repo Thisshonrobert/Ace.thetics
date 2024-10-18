@@ -15,12 +15,13 @@ interface Product {
 
 interface PostProps {
   celebrityImage: string
+  celebrityDp:string
   celebrityName: string
   postDate: string
   products: Product[]
 }
 
-export default function PostComponent({ celebrityImage, celebrityName, postDate, products }: PostProps) {
+export default function PostComponent({ celebrityImage,celebrityDp, celebrityName, postDate, products }: PostProps) {
   const [liked, setLiked] = useState(false)
 
   return (
@@ -36,11 +37,11 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
             className="object-cover w-full h-[480px]"
           />
         </div>
-        <div className="w-1/2 p-4"> {/* Reduced padding */}
+        <div className="w-1/2 p-4"> 
           <div className="flex items-center justify-between mb-1 border-b-2 border-gray-100"> {/* Reduced bottom margin */}
             <div className="flex items-center ">
             <CloudFrontImage
-                src={`profile/${celebrityName}.jpg`}
+                src={celebrityDp}
                 alt={celebrityName}
                 width={32}
                 height={32}
@@ -55,9 +56,9 @@ export default function PostComponent({ celebrityImage, celebrityName, postDate,
               <Heart className={`h-6 w-6 ${liked ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
             </button>
           </div>
-          <div className="space-y-3 overflow-y-auto max-h-[calc(80vh-200px)]"> 
+          <div className="space-y-3 overflow-y-auto max-h-[calc(80vh-200px)] mt-2"> 
             {products.map((product) => (
-              <div key={product.id} className="flex items-center space-x-3 p-2  rounded-lg">
+              <div key={product.id} className="flex items-center space-x-3 p-2  rounded-lg ml-4 border-b">
                 <CloudFrontImage
                   src={product.image}
                   alt={product.seoname}
