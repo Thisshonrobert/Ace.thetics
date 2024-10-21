@@ -25,16 +25,21 @@ const secondaryVariant = {
   },
 };
 
-export const FileUpload = ({
-  onChange,
-}: {
+interface FileUploadProps {
   onChange?: (files: File[]) => void;
-}) => {
+  multiple?: boolean;
+}
+
+export const FileUpload: React.FC<FileUploadProps> = ({ onChange, multiple = false }) => {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    if (multiple) {
+      setFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    } else {
+      setFiles(newFiles);
+    }
     onChange && onChange(newFiles);
   };
 
@@ -42,17 +47,16 @@ export const FileUpload = ({
     fileInputRef.current?.click();
   };
 
-  // Provide necessary drag event handlers
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    multiple: false,
+    multiple,
     noClick: true,
     onDrop: (acceptedFiles: File[]) => handleFileChange(acceptedFiles),
     onDropRejected: (fileRejections: FileRejection[]) => {
       console.log("Rejected files:", fileRejections);
     },
-    onDragEnter: () => {},  // Empty function for drag enter
-    onDragOver: () => {},   // Empty function for drag over
-    onDragLeave: () => {},  // Empty function for drag leave
+    onDragEnter: () => {},
+    onDragOver: () => {},
+    onDragLeave: () => {},
   });
 
   return (
@@ -63,22 +67,23 @@ export const FileUpload = ({
         className="p-10 group/file block rounded-lg cursor-pointer w-full relative overflow-hidden"
       >
         <input
-          {...getInputProps()} // Add getInputProps for proper file handling
+          {...getInputProps()}
           ref={fileInputRef}
           id="file-upload-handle"
           type="file"
           onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
           className="hidden"
+          multiple={multiple}
         />
         <div className="absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]">
           <GridPattern />
         </div>
         <div className="flex flex-col items-center justify-center">
           <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-base">
-            Upload file
+            Upload file{multiple ? 's' : ''}
           </p>
           <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
-            Drag or drop your files here or click to upload
+            Drag or drop your file{multiple ? 's' : ''} here or click to upload
           </p>
           <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&

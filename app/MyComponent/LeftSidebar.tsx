@@ -7,11 +7,22 @@ import Image from "next/image";
 import { FaAngleRight } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { HiArrowNarrowRight } from "react-icons/hi";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 const menuItems = [
   { icon: Star, label: "Stars" },
-  { icon: Gift, label: "Offers" },
+  // { icon: Gift, label: "Offers" },
   { icon: Heart, label: "Liked" },
   { icon: List, label: "Wishlist" },
   { icon: ShoppingBag, label: "Products" },
@@ -27,7 +38,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
       <SheetContent side="left" className="w-[240px] sm:w-[300px] p-0">
         <nav className="h-full bg-white flex flex-col justify-between overflow-y-auto">
           {/* Top Section: Logo and Title */}
-          <div className="flex flex-col items-center p-4">
+          <div className="flex flex-col items-center p-4 border-b">
             <Image
               src="/Acethetics.png"
               alt="Ace.Thetics logo"
@@ -35,7 +46,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               height={40}
               className="rounded-md"
             />
-            <div className="text-center mt-2">
+            <div className="text-center mt-2 ">
               <span className="block text-sm font-semibold">Ace.Thetics</span>
               <span className="block text-xs text-slate-500">Livi'n Style</span>
             </div>
@@ -53,7 +64,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                     <item.icon className="h-5 w-5 mr-3" />
                     <span className="mr-2">{item.label}</span>
                   </div>
-                  <FaAngleRight className="h-5 w-5 text-gray-500" />
+                  <HiArrowNarrowRight className="h-5 w-5 text-gray-500" />
                 </button>
               </li>
             ))}
@@ -63,7 +74,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
           {!session && (
             <div className="p-4 border-t border-gray-200">
               <div className="text-center font-poppins font-medium mb-2">
-                Register to save outfits to your Wishlist, and view price drops
+              Sign up to save outfits to your Wishlist 
               </div>
               <Button
                 onClick={() => router.push("/api/auth/signin")}
@@ -80,7 +91,13 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 <AvatarFallback>{session.user?.name?.[0] || 'U'}</AvatarFallback>
               </Avatar>
               <Button variant="ghost" size="icon" className="h-10 w-10">
-                <Settings className="h-6 w-6" />
+              <DropdownMenu>
+              <DropdownMenuTrigger><Settings className="h-6 w-6" /></DropdownMenuTrigger>
+              <DropdownMenuContent>
+                  <DropdownMenuItem onClick={()=>router.push("/api/auth/signout")}>Log Out</DropdownMenuItem>
+                </DropdownMenuContent>
+                
+              </DropdownMenu>
               </Button>
             </div>
           )}

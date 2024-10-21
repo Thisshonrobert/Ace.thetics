@@ -14,7 +14,8 @@ const config: Config = {
   theme: {
 	fontFamily:{
 		signature:['Great Vibes'],
-		poppins:['Poppins']
+		poppins:['Poppins'],
+		Dancing:["Dancing Script"]
 	  },
   	extend: {
   		colors: {

@@ -62,7 +62,7 @@ export default function AdminPageClient() {
   }, [session, status, router]);
 
   const handleCelebFileUpload = (files: File[]) => {
-    setCelebFiles(files);
+    setCelebFiles(prevFiles => [...prevFiles, ...files]);
   };
 
   const handleDpFileUpload = (files: File[]) => {
@@ -190,10 +190,19 @@ export default function AdminPageClient() {
         </>
       )}
       
-      <label>Celeb post pic</label>
+      <label>Celeb post pics (multiple)</label>
       <div className="w-full max-w-4xl mx-auto min-h-96 border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg mt-4">
-        <FileUpload onChange={handleCelebFileUpload} />
+        <FileUpload onChange={handleCelebFileUpload} multiple />
       </div>
+      
+      {celebFiles.length > 0 && (
+        <div>
+          <h3>Selected Celebrity Images:</h3>
+          {celebFiles.map((file, index) => (
+            <p key={index}>{file.name}</p>
+          ))}
+        </div>
+      )}
 
       <h2>Add Products</h2>
       <Input 

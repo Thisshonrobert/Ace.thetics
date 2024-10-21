@@ -36,7 +36,7 @@ model Product {
 model Post {
   id          Int           @id @default(autoincrement())
   celebrityId Int
-  imageUrl    String         // URL of the celebrity's image (unique to each post)
+  imageUrl    String[]         
   date        DateTime       @default(now())
   Liked       Boolean
   products    PostProduct[]  // Relation to the 'PostProduct' model
@@ -90,7 +90,6 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
-  gender        String?
   likedPost     Post[]
   wishList      Product[]
   accounts      Account[]

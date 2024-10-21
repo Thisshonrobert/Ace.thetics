@@ -3,14 +3,14 @@ import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 
 export async function POST(req: NextRequest) {
-  
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
   const { name, socialId, dpImage, celebImages, products } = await req.json();
 
-  if (!name || !celebImages || !products) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  if (!name || !celebImages || !products || !Array.isArray(celebImages)) {
+    return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
   }
 
   try {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const post = await prisma.post.create({
       data: {
         celebrityId: celebrity.id,
-        imageUrl: celebImages[0],
+        imageUrl: celebImages, // Now using the entire array of images
         Liked: false,
         products: {
           create: products.map((product: any) => ({

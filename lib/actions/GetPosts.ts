@@ -19,9 +19,9 @@ export async function GetPosts() {
   
       return posts.map(post => ({
         id: post.id,
-        celebrityImage: post.imageUrl,
+        celebrityImages: post.imageUrl, // This is now an array
         celebrityName: post.Celebrity.name,
-        celebrityDp:post.Celebrity.dp,
+        celebrityDp: post.Celebrity.dp,
         postDate: post.date.toDateString(),
         products: post.products.map(pp => ({
           id: pp.Product.id,
@@ -37,4 +37,3 @@ export async function GetPosts() {
       return [];
     }
   }
-  
