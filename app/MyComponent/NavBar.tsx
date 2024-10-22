@@ -1,7 +1,6 @@
 
 
 import { Button } from "@/components/ui/button";
-import { Container } from "@radix-ui/themes";
 import { Menu } from "lucide-react";
 import { FaPinterest } from "react-icons/fa";
 import { FaInstagram } from "react-icons/fa6";
