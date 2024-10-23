@@ -14,6 +14,7 @@ interface Product {
   category: string;
   shop: string;
   link: string;
+  description:string;
   image: File | null;
 }
 
@@ -50,6 +51,7 @@ export default function AdminPageClient() {
     category: '',
     shop: '',
     link: '',
+    description:'',
     image: null,
   });
   const [products, setProducts] = useState<Product[]>([]);
@@ -95,6 +97,7 @@ export default function AdminPageClient() {
         category: '',
         shop: '',
         link: '',
+        description:'',
         image: null,
       });
     } else {
@@ -165,7 +168,7 @@ export default function AdminPageClient() {
   };
 
   return (
-    <div className='max-w-xl flex flex-col items-center justify-center mx-auto'>
+    <div className='max-w-xl flex flex-col items-center justify-center mx-auto space-y-3'>
       {error && <div className="text-red-500 mb-4">{error}</div>}
       <Input 
         onChange={(e) => setCelebName(e.target.value)} 
@@ -210,6 +213,11 @@ export default function AdminPageClient() {
         value={currentProduct.brandName} 
         placeholder='Brand name' 
       />
+       <Input 
+        onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
+        value={currentProduct.description} 
+        placeholder='Description' 
+      />
       <Input 
         onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
         value={currentProduct.seoName} 
@@ -253,3 +261,5 @@ export default function AdminPageClient() {
     </div>
   );
 }
+
+//if any error check description

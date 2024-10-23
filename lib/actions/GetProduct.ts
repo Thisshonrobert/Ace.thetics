@@ -1,15 +1,20 @@
 'use server'
+
 import { prisma } from "@/prisma";
 
-export async function GetProduct(productid: number): Promise<{ 
+export interface Product {
   id: number;
   category: string;
   brandname: string;
   seoname: string;
   shop: string;
-  image: string;
+  imageUrl: string;
   link: string;
-} | string> {
+  description: string;
+  whishList?: boolean;
+}
+
+export async function GetProduct(productid: number): Promise<Product | null> {
   try {
     const product = await prisma.product.findFirst({
       where: {
@@ -17,7 +22,7 @@ export async function GetProduct(productid: number): Promise<{
       }
     });
 
-    if (!product) return "Product not found";
+    if (!product) return null;
 
     return {
       id: product.id,
@@ -25,12 +30,14 @@ export async function GetProduct(productid: number): Promise<{
       brandname: product.brandname,
       seoname: product.seoname,
       shop: product.shop,
-      image: product.imageUrl,
-      link: product.link
+      imageUrl: product.imageUrl,
+      link: product.link,
+      description: product.description,
+      whishList: product.whishList
     };
 
   } catch (error) {
-    console.log(error)
-    return "failed to fetch product";
+    console.error("Failed to fetch product:", error);
+    return null;
   }
 }

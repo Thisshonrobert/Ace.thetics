@@ -14,8 +14,7 @@ export default async function Home() {
             celebrityDp={post.celebrityDp}
             celebrityName={post.celebrityName}
             postDate={post.postDate}
-            products={post.products}
-          />
+            products={post.products} id={post.id}          />
         ))
       ) : (
         <p className="text-center text-gray-500">No posts found.</p>

@@ -26,6 +26,7 @@ model Product {
   category    String
   whishList   Boolean
   shop        String
+  description String         @default("Elevate your style, embrace the trend!")
   link        String        
   imageUrl    String        @unique
   PostProduct PostProduct[]

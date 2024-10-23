@@ -1,23 +1,20 @@
 "use client";
 
-import { Star, Gift, Heart, List, ShoppingBag, Tag, Settings } from "lucide-react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
-import { FaAngleRight } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Heart, List, Settings, ShoppingBag, Star, Tag } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { HiArrowNarrowRight } from "react-icons/hi";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 
 
 const menuItems = [

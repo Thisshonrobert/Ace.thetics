@@ -81,7 +81,7 @@ export default function PostComponent({
         </div>
         <div className="w-1/2 p-4 flex flex-col">
           <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-100">
-            <div className="flex items-center">
+            <div className="flex items-center hover:cursor-pointer" onClick={()=>router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
                 <CloudFrontImage
                   src={celebrityDp}
@@ -111,7 +111,7 @@ export default function PostComponent({
             {products.map((product) => (
               <div
                 key={product.id}
-                className="flex items-center space-x-3 p-2 rounded-lg border-b mb-2 shadow-md"
+                className="flex items-center space-x-3 p-2 rounded-lg border-b mb-2 shadow-md hover:cursor-pointer"
                 onClick={() => handleProductClick(product)}
               >
                 <CloudFrontImage
