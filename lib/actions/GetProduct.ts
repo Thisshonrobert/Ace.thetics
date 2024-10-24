@@ -11,7 +11,7 @@ export interface Product {
   imageUrl: string;
   link: string;
   description: string;
-  whishList?: boolean;
+  wishList?:boolean
 }
 
 export async function GetProduct(productid: number): Promise<Product | null> {
@@ -33,7 +33,7 @@ export async function GetProduct(productid: number): Promise<Product | null> {
       imageUrl: product.imageUrl,
       link: product.link,
       description: product.description,
-      whishList: product.whishList
+     
     };
 
   } catch (error) {

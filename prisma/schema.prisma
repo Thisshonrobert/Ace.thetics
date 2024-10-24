@@ -1,6 +1,6 @@
 datasource db {
-  provider = "postgresql"  // or whatever your database provider is (e.g., "mysql", "sqlite")
-  url      = env("DATABASE_URL")  // The connection string stored in the .env file
+  provider = "postgresql" // or whatever your database provider is (e.g., "mysql", "sqlite")
+  url      = env("DATABASE_URL") // The connection string stored in the .env file
 }
 
 // Add the generator block to generate Prisma client
@@ -8,12 +8,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 model Celebrity {
-  id            Int    @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
   name          String
   dp            String
-  socialmediaId String 
+  socialmediaId String
+  gender        Gender?
   posts         Post[] // Relation to the 'Post' model
 
   @@index([name])
@@ -24,27 +24,26 @@ model Product {
   brandname   String
   seoname     String
   category    String
-  whishList   Boolean
+  wishList   User[]        @relation("wishlist")
   shop        String
-  description String         @default("Elevate your style, embrace the trend!")
-  link        String        
+  description String        @default("Elevate your style, embrace the trend!")
+  link        String
   imageUrl    String        @unique
   PostProduct PostProduct[]
-  @@index([shop, category])
-  User User[]
+
+  @@index([shop, brandname])
 }
 
 model Post {
   id          Int           @id @default(autoincrement())
   celebrityId Int
-  imageUrl    String[]         
-  date        DateTime       @default(now())
-  Liked       Boolean
-  products    PostProduct[]  // Relation to the 'PostProduct' model
-  Celebrity   Celebrity      @relation(fields: [celebrityId], references: [id])
+  imageUrl    String[]
+  date        DateTime      @default(now())
+  Liked       User[]        @relation("Likes")
+  products    PostProduct[] // Relation to the 'PostProduct' model
+  Celebrity   Celebrity     @relation(fields: [celebrityId], references: [id])
 
   @@index([celebrityId])
-  User User[]
 }
 
 model PostProduct {
@@ -54,7 +53,6 @@ model PostProduct {
   Post      Post    @relation(fields: [postId], references: [id])
   Product   Product @relation(fields: [productId], references: [id])
 }
-
 
 model Account {
   id                String  @id @default(cuid())
@@ -91,10 +89,11 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
-  likedPost     Post[]
-  wishList      Product[]
+  likedPost     Post[]    @relation("Likes")
+  wishList      Product[] @relation("wishlist")
   accounts      Account[]
   sessions      Session[]
+
   @@map("users")
 }
 
@@ -105,4 +104,10 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verificationtokens")
+}
+
+enum Gender {
+  men
+  women
+  kids
 }

@@ -1,12 +1,16 @@
-"use client";
+'use client'
 
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import CloudFrontImage from "./CloudFrontImage";
 import { shops } from "@/constants/shop";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { HiArrowNarrowRight } from "react-icons/hi";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { likePost } from "@/lib/actions/LikePost";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export interface Product {
   id: number;
@@ -23,20 +27,25 @@ export interface PostProps {
   celebrityName: string;
   postDate: string;
   products: Product[];
+  initialLikedState: boolean;
 }
 
 export default function PostComponent({
+  id,
   celebrityImages,
   celebrityDp,
   celebrityName,
   postDate,
   products,
+  initialLikedState,
 }: PostProps) {
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(initialLikedState);
+  const [isPending, startTransition] = useTransition();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product>();
   const router = useRouter();
+  const { data: session } = useSession();
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -47,9 +56,46 @@ export default function PostComponent({
       });
     }
   };
+
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
     router.push(`/product/${product.id}`);
+  };
+
+  const handleLike = () => {
+    if (!session) {
+      <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="outline">Show Dialog</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete your
+            account and remove your data from our servers.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction>Continue</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await likePost(id);
+        if (result.success) {
+          setLiked(result.liked);
+        }
+      } catch (error) {
+        console.error('Failed to like post:', error);
+        // Handle error (e.g., show a toast notification)
+      }
+    });
   };
 
   return (
@@ -64,7 +110,7 @@ export default function PostComponent({
               alt={`${celebrityName} ${index + 1}`}
               width={500}
               height={480}
-              className={`object-cover w-full h-[480px] absolute top-0 left-0 transition-opacity duration-300 ${
+              className={`object-cover w-full  absolute top-0 left-0 transition-opacity duration-300 ${
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -79,7 +125,7 @@ export default function PostComponent({
             onMouseLeave={() => setCurrentImageIndex(0)}
           />
         </div>
-        <div className="w-1/2 p-4 flex flex-col">
+        <div className="w-1/2 p-4 flex flex-col ">
           <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-100">
             <div className="flex items-center hover:cursor-pointer" onClick={()=>router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
@@ -97,13 +143,14 @@ export default function PostComponent({
               </div>
             </div>
             <button
-              onClick={() => setLiked(!liked)}
+              onClick={handleLike}
               className="focus:outline-none"
+              disabled={isPending}
             >
               <Heart
                 className={`h-6 w-6 ${
                   liked ? "fill-red-500 text-red-500" : "text-gray-400"
-                }`}
+                } ${isPending ? "opacity-50" : ""}`}
               />
             </button>
           </div>
@@ -132,7 +179,7 @@ export default function PostComponent({
                           shops.find((shop) => shop.name === product.shop)
                             ?.image
                         }
-                      ></AvatarImage>
+                      />
                       <AvatarFallback>{product.shop} </AvatarFallback>
                     </Avatar>
                   </div>
@@ -168,7 +215,7 @@ export default function PostComponent({
             }
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
-          <div className="absolute bottom-0 left-0 right-0 top-[90%]  bg-gradient-to-t from-black to-transparent p-4">
+          <div className="absolute bottom-0 left-0 right-0 top-[90%] p-4">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2">
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white">
@@ -188,13 +235,14 @@ export default function PostComponent({
                 </div>
               </div>
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={handleLike}
                 className="focus:outline-none"
+                disabled={isPending}
               >
                 <Heart
                   className={`h-6 w-6 ${
                     liked ? "fill-red-500 text-red-500" : "text-gray-400"
-                  }`}
+                  } ${isPending ? "opacity-50" : ""}`}
                 />
               </button>
             </div>
@@ -228,7 +276,7 @@ export default function PostComponent({
                       src={
                         shops.find((shop) => shop.name === product.shop)?.image
                       }
-                    ></AvatarImage>
+                    />
                     <AvatarFallback>{product.shop} </AvatarFallback>
                   </Avatar>
                 </div>
@@ -237,7 +285,7 @@ export default function PostComponent({
           </div>
           <button
             onClick={() => scroll("left")}
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 shadow-md  text-gray-300 hover:text-gray-400"
+            className="absolute  left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 shadow-md  text-gray-300 hover:text-gray-400"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>

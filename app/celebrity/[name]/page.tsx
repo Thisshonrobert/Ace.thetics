@@ -21,8 +21,7 @@ export default async function CelebrityPage({
               celebrityName={post.celebrityName}
               postDate={post.postDate}
               products={post.products}
-              id={post.id}
-            />
+              id={post.id} initialLikedState={false}            />
           ))
         ) : (
           <p className="text-center text-gray-500">No posts found.</p>

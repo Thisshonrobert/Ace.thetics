@@ -8,6 +8,9 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { HiArrowNarrowRight } from "react-icons/hi";
+import { GiMale } from "react-icons/gi";
+import { IoIosFemale } from "react-icons/io";
+import { FaBabyCarriage } from "react-icons/fa";
 
 import {
   DropdownMenu,
@@ -18,12 +21,13 @@ import {
 
 
 const menuItems = [
-  { icon: Star, label: "Stars" },
-  // { icon: Gift, label: "Offers" },
-  { icon: Heart, label: "Liked" },
-  { icon: List, label: "Wishlist" },
-  { icon: ShoppingBag, label: "Products" },
-  { icon: Tag, label: "Brands" },
+  { icon: GiMale, label: "Men" ,route:"/filter/men"},
+  { icon: IoIosFemale, label: "Women",route:"/filter/women" },
+  { icon: FaBabyCarriage, label: "Kids",route:"/filter/kids" },
+  { icon: Heart, label: "Liked",route:"/liked" },
+  { icon: List, label: "Wishlist",route:"/WishList" },
+  { icon: ShoppingBag, label: "Products",route:"/Products" },
+  { icon: Tag, label: "Shops",route:"/Shops" },
 ];
 
 export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -57,7 +61,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                   className="flex items-center justify-between w-full px-4 py-2 text-gray-700 hover:bg-gray-200 rounded"
                   onClick={onClose}
                 >
-                  <div className="flex items-center">
+                  <div className="flex items-center hover:cursor-pointer" onClick={()=>router.push(item.route)}>
                     <item.icon className="h-5 w-5 mr-3" />
                     <span className="mr-2">{item.label}</span>
                   </div>

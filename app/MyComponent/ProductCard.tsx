@@ -38,7 +38,7 @@ const ProductCard = ({ image, alt, seoname, description, link }: ProductCardProp
           </p>
           <div className='flex justify-between mt-4'>
             <a 
-              href={link.startsWith('http') ? link : `https://${link}`} 
+              href={`https://${link}`} 
               target="_blank" 
               rel="noopener noreferrer"
               className="rounded-full px-4 py-2 text-white flex items-center space-x-2 bg-black text-xs font-bold dark:bg-zinc-800"

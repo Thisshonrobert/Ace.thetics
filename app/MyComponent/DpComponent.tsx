@@ -39,7 +39,7 @@ const DpComponent: React.FC<DpComponentProps> = ({ post }) => {
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">{post.celebrityName}</h1>
           <a
-            href={post.celebritySocialMedia.startsWith('http') ? post.celebritySocialMedia : `https://${post.celebritySocialMedia}`}
+            href={`https://${post.celebritySocialMedia}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-white hover:text-gray-200 transition-colors"

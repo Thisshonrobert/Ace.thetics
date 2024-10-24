@@ -1,10 +1,15 @@
 'use server'
 import { prisma } from "@/prisma";
+import { Gender } from "@prisma/client";
 
-export async function GetPosts() {
+export async function GetGenderPosts(gender:Gender) {
     try {
       const posts = await prisma.post.findMany({
-        
+        where:{
+            Celebrity:{
+                gender:gender
+            }
+        },
         include: {
           Celebrity: true,
           products: {

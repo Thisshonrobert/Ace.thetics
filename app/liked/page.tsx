@@ -1,5 +1,5 @@
-import Post from "./MyComponent/Post";
 import { GetPosts } from "@/lib/actions/GetPosts";
+import Post from "../MyComponent/Post";
 
 export default async function Home() {
   const posts = await GetPosts();
