@@ -1,27 +1,26 @@
-import { GetPosts } from "@/lib/actions/GetPosts";
-import Post from "../MyComponent/Post";
+'use client'
 
-export default async function Home() {
-  const posts = await GetPosts();
+import { useRecoilValue } from 'recoil';
+import PostComponent from '../MyComponent/Post';
+import { likedPostsSelector } from '../store/likedPostAtom';
+
+export default function LikedPage() {
+  const likedPosts = useRecoilValue(likedPostsSelector);
 
   return (
-    <div>
-       <div className="space-y-8">
-      {posts.length > 0 ? (
-        posts.map((post) => (
-          <Post
-            key={post.id}
-            celebrityImages={post.celebrityImages} // Now passing an array of images
-            celebrityDp={post.celebrityDp}
-            celebrityName={post.celebrityName}
-            postDate={post.postDate}
-            products={post.products} id={post.id} initialLikedState={false}          />
-        ))
+    <div className="container mx-auto px-4 py-8">
+      {likedPosts.length > 0 ? (
+        <div className="space-y-8">
+          {likedPosts.map((post) => (
+            <PostComponent
+              key={post.id}
+              {...post}
+            />
+          ))}
+        </div>
       ) : (
-        <p className="text-center text-gray-500">No posts found.</p>
+        <p className="text-center text-gray-500">You haven't liked any posts yet.</p>
       )}
     </div>
-    </div>
-   
   );
 }

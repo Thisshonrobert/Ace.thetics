@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import Layout from "./MyComponent/layout";
 import AuthProvider from "./auth/AuthProvider";
 import "./globals.css";
+import RecoilProvider from "./store/recoilProvider";
+import { Toaster } from "@/components/ui/toaster";
 
 // Local font imports
 const geistSans = localFont({
@@ -33,7 +35,10 @@ export default function RootLayout({
       >
           <AuthProvider>
             <Layout>
+            <RecoilProvider>
               <main>{children}</main>
+              <Toaster />
+            </RecoilProvider>
             </Layout>
           </AuthProvider>
       </body>

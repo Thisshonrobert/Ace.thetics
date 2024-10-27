@@ -10,7 +10,7 @@ export default function Navbar({ toggleLeftSidebar }: any) {
     <nav className="flex items-center justify-between p-4  border-b bg-zinc-100 ">
       <Button
         variant="ghost"
-        size='lg'
+        size='icon'
         onClick={toggleLeftSidebar}
         className="sm:ml-6"
       >
@@ -24,7 +24,7 @@ export default function Navbar({ toggleLeftSidebar }: any) {
         <span className="font-Dancing font-bold">Ace</span>.Thetics
       </button>
       <div className="flex items-center ">
-        <div className="hidden sm:flex space-x-3 mr-2">
+        <div className="hidden md:flex space-x-3 mr-2">
           <AiFillInstagram />
           <FaPinterest />
         </div>

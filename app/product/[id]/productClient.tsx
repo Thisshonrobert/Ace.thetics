@@ -81,10 +81,10 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
       setProduct(fetchedProduct)
 
       if (fetchedProduct) {
-        const brandItems = await GetShopBrandItems(fetchedProduct.shop, fetchedProduct.brandname)
+        const brandItems = await GetShopBrandItems(fetchedProduct.shop, fetchedProduct.brandname,productId)
         setShopBrandItems(brandItems)
 
-        const shopItems = await GetShopBrandItems(fetchedProduct.shop, '')
+        const shopItems = await GetShopBrandItems(fetchedProduct.shop, '',productId)
         setShopItems(shopItems)
       }
     }

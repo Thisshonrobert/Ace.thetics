@@ -1,18 +1,20 @@
 'use client'
 
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef, useTransition, useEffect } from "react";
-import CloudFrontImage from "./CloudFrontImage";
-import { shops } from "@/constants/shop";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HiArrowNarrowRight } from "react-icons/hi";
+import { useState, useRef } from "react";
+import { useRecoilState } from 'recoil';
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { HiArrowNarrowRight } from "react-icons/hi";
+import { motion, AnimatePresence } from "framer-motion";
+import CloudFrontImage from "./CloudFrontImage";
+import { shops } from "@/constants/shop";
 import { likePost } from "@/lib/actions/LikePost";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { likedPostsState } from "../store/likedPostAtom";
+import { useToast } from "@/hooks/use-toast";
 
-export interface Product {
+interface Product {
   id: number;
   brandname: string;
   seoname: string;
@@ -20,14 +22,13 @@ export interface Product {
   image: string;
 }
 
-export interface PostProps {
+interface PostProps {
   id: number;
   celebrityImages: string[];
   celebrityDp: string;
   celebrityName: string;
   postDate: string;
   products: Product[];
-  initialLikedState: boolean;
 }
 
 export default function PostComponent({
@@ -37,15 +38,14 @@ export default function PostComponent({
   celebrityName,
   postDate,
   products,
-  initialLikedState,
 }: PostProps) {
-  const [liked, setLiked] = useState(initialLikedState);
-  const [isPending, startTransition] = useTransition();
+  const [likedPosts, setLikedPosts] = useRecoilState(likedPostsState);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLiked, setIsLiked] = useState(likedPosts.some(post => post.id === id));
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product>();
   const router = useRouter();
   const { data: session } = useSession();
+  const { toast } = useToast();
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -58,50 +58,56 @@ export default function PostComponent({
   };
 
   const handleProductClick = (product: Product) => {
-    setSelectedProduct(product);
     router.push(`/product/${product.id}`);
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!session) {
-      <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="outline">Show Dialog</Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove your data from our servers.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction>Continue</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      router.push('/api/auth/signin');
       return;
     }
 
-    startTransition(async () => {
-      try {
-        const result = await likePost(id);
-        if (result.success) {
-          setLiked(result.liked);
-        }
-      } catch (error) {
-        console.error('Failed to like post:', error);
-        // Handle error (e.g., show a toast notification)
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+
+    // Optimistic update
+    setLikedPosts(prev => 
+      newLikedState
+        ? [...prev, { id, celebrityImages, celebrityDp, celebrityName, postDate, products }]
+        : prev.filter(post => post.id !== id)
+    );
+
+    try {
+      const result = await likePost(id);
+      if (!result.success) {
+        throw new Error('Failed to update like status');
       }
-    });
+    } catch (error) {
+      console.error('Failed to like post:', error);
+      // Revert the optimistic update on error
+      setIsLiked(!newLikedState);
+      setLikedPosts(prev => 
+        newLikedState
+          ? prev.filter(post => post.id !== id)
+          : [...prev, { id, celebrityImages, celebrityDp, celebrityName, postDate, products }]
+      );
+      toast({
+        title: "Error",
+        description: "Failed to update like status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const heartVariants = {
+    liked: { scale: [1, 1.2, 1], transition: { duration: 0.3 } },
+    unliked: { scale: [1, 0.8, 1], transition: { duration: 0.3 } }
   };
 
   return (
-    <div className="w-[90%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-lg mt-4">
+    <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4">
       {/* Desktop View */}
-      <div className="hidden sm:flex ">
+      <div className="hidden sm:flex">
         <div className="w-1/2 relative overflow-hidden">
           {celebrityImages.map((image, index) => (
             <CloudFrontImage
@@ -110,7 +116,7 @@ export default function PostComponent({
               alt={`${celebrityName} ${index + 1}`}
               width={500}
               height={480}
-              className={`object-cover w-full  absolute top-0 left-0 transition-opacity duration-300 ${
+              className={`object-cover w-full absolute top-0 left-0 transition-opacity duration-300 ${
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
             />
@@ -125,9 +131,9 @@ export default function PostComponent({
             onMouseLeave={() => setCurrentImageIndex(0)}
           />
         </div>
-        <div className="w-1/2 p-4 flex flex-col ">
+        <div className="w-1/2 p-4 flex flex-col">
           <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-100">
-            <div className="flex items-center hover:cursor-pointer" onClick={()=>router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
+            <div className="flex items-center hover:cursor-pointer" onClick={() => router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
               <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
                 <CloudFrontImage
                   src={celebrityDp}
@@ -142,17 +148,22 @@ export default function PostComponent({
                 <p className="text-sm text-gray-500">{postDate}</p>
               </div>
             </div>
-            <button
-              onClick={handleLike}
-              className="focus:outline-none"
-              disabled={isPending}
-            >
-              <Heart
-                className={`h-6 w-6 ${
-                  liked ? "fill-red-500 text-red-500" : "text-gray-400"
-                } ${isPending ? "opacity-50" : ""}`}
-              />
-            </button>
+           
+            <AnimatePresence>
+              <motion.button
+                onClick={handleLike}
+                className="focus:outline-none"
+                initial={false}
+                animate={isLiked ? "liked" : "unliked"}
+                variants={heartVariants}
+              >
+                <Heart
+                  className={`h-6 w-6 ${
+                    isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                  }`}
+                />
+              </motion.button>
+            </AnimatePresence>
           </div>
           <div className="flex-grow overflow-y-auto">
             {products.map((product) => (
@@ -171,7 +182,7 @@ export default function PostComponent({
                 <div className="flex-grow pl-6">
                   <h3 className="font-bold">{product.brandname}</h3>
                   <p className="text-sm text-gray-600">{product.seoname}</p>
-                  <div className="flex items-center ">
+                  <div className="flex items-center">
                     <p className="text-sm text-gray-600">shop from: </p>
                     <Avatar className="ml-2">
                       <AvatarImage
@@ -180,7 +191,7 @@ export default function PostComponent({
                             ?.image
                         }
                       />
-                      <AvatarFallback>{product.shop} </AvatarFallback>
+                      <AvatarFallback>{product.shop}</AvatarFallback>
                     </Avatar>
                   </div>
                 </div>
@@ -234,17 +245,22 @@ export default function PostComponent({
                   <p className="text-xs text-gray-500">{postDate}</p>
                 </div>
               </div>
-              <button
-                onClick={handleLike}
-                className="focus:outline-none"
-                disabled={isPending}
-              >
-                <Heart
-                  className={`h-6 w-6 ${
-                    liked ? "fill-red-500 text-red-500" : "text-gray-400"
-                  } ${isPending ? "opacity-50" : ""}`}
-                />
-              </button>
+              
+              <AnimatePresence>
+                <motion.button
+                  onClick={handleLike}
+                  className="focus:outline-none"
+                  initial={false}
+                  animate={isLiked ? "liked" : "unliked"}
+                  variants={heartVariants}
+                >
+                  <Heart
+                    className={`h-6 w-6 ${
+                      isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                    }`}
+                  />
+                </motion.button>
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -256,7 +272,7 @@ export default function PostComponent({
             {products.map((product) => (
               <div
                 key={product.id}
-                className="flex-shrink-0 w-20 "
+                className="flex-shrink-0 w-20"
                 onClick={() => handleProductClick(product)}
               >
                 <CloudFrontImage
@@ -269,7 +285,7 @@ export default function PostComponent({
                 <p className="mt-2 font-semibold text-xs truncate">
                   {product.brandname}
                 </p>
-                <div className="flex items-center ">
+                <div className="flex items-center">
                   <p className="text-sm text-gray-600">shop:</p>
                   <Avatar className="ml-2">
                     <AvatarImage
@@ -277,7 +293,7 @@ export default function PostComponent({
                         shops.find((shop) => shop.name === product.shop)?.image
                       }
                     />
-                    <AvatarFallback>{product.shop} </AvatarFallback>
+                    <AvatarFallback>{product.shop}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
@@ -285,7 +301,7 @@ export default function PostComponent({
           </div>
           <button
             onClick={() => scroll("left")}
-            className="absolute  left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 shadow-md  text-gray-300 hover:text-gray-400"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full p-1 shadow-md text-gray-300 hover:text-gray-400"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>

@@ -4,9 +4,7 @@ import { prisma } from "@/prisma";
 import { Product } from "./GetProduct";
 import { auth } from "@/auth";
 
-export async function GetShopBrandItems(shopname: string, brandname: string): Promise<Product[]> {
-    const session = await auth();
-    const userId = session?.user?.id;
+export async function GetShopBrandItems(shopname: string, brandname: string,productId:number): Promise<Product[]> {
     try {
         const whereClause = brandname 
             ? { shop: shopname, brandname: brandname }

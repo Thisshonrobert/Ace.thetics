@@ -71,7 +71,7 @@ export default function CelebritySearch() {
             </div>
 
             {/* Mobile Search Icon */}
-            <div className="md:hidden flex justify-end">
+            <div className="md:hidden flex justify-end ml-1">
                 <button onClick={toggleMobileSearch} className="p-2">
                     <Search className="w-6 h-6 text-gray-600" />
                 </button>
