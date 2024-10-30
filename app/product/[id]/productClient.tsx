@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import ProductCard from "@/app/MyComponent/ProductCard"
 import { GetProduct, Product } from "@/lib/actions/GetProduct"
-import { GetShopBrandItems } from "@/lib/actions/GetShopBrandItems"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import CloudFrontImage from '@/app/MyComponent/CloudFrontImage'
 import Link from 'next/link'
+import {  GetCategoryItems, GetShopItems } from '@/lib/actions/GetShopBrandItems'
 
 interface ProductCarouselProps {
   items: Product[]
@@ -72,7 +72,7 @@ interface ProductPageClientProps {
 
 export default function ProductPageClient({ productId }: ProductPageClientProps) {
   const [product, setProduct] = useState<Product | null>(null)
-  const [shopBrandItems, setShopBrandItems] = useState<Product[]>([])
+  const [categoryItems, setCategoryItems] = useState<Product[]>([])
   const [shopItems, setShopItems] = useState<Product[]>([])
 
   useEffect(() => {
@@ -81,10 +81,10 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
       setProduct(fetchedProduct)
 
       if (fetchedProduct) {
-        const brandItems = await GetShopBrandItems(fetchedProduct.shop, fetchedProduct.brandname,productId)
-        setShopBrandItems(brandItems)
+        const categoryItems = await GetCategoryItems( fetchedProduct.category,productId)
+        setCategoryItems(categoryItems)
 
-        const shopItems = await GetShopBrandItems(fetchedProduct.shop, '',productId)
+        const shopItems = await GetShopItems(fetchedProduct.shop,productId)
         setShopItems(shopItems)
       }
     }
@@ -109,7 +109,7 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
       </div>
 
       <div className="bg-white max-w-5xl shadow-lg rounded-lg p-6 mx-auto">
-        <ProductCarousel items={shopBrandItems} title={`${product.brandname}`} />
+        <ProductCarousel items={categoryItems} title={`${product.category}`} />
         <div className='border'></div>
         <ProductCarousel items={shopItems} title={`${product.shop}`} />
       </div>

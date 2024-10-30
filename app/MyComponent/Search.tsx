@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import GetRecentCelebrity, { Celebrity } from "@/lib/actions/GetRecent";
-import CloudFrontImage from "./CloudFrontImage";
 
 export default function CelebritySearch() {
     const [recentCelebrities, setRecentCelebrities] = useState<Celebrity[]>([]);
@@ -108,7 +107,7 @@ export default function CelebritySearch() {
                         <div className="grid grid-cols-2 gap-4">
                             {recentCelebrities.map((celebrity) => (
                                 <div key={celebrity.id} className="flex flex-col items-center">
-                                    <CloudFrontImage
+                                    <img
                                         src={celebrity.image}
                                         alt={celebrity.name}
                                         width={80}
@@ -152,7 +151,7 @@ export default function CelebritySearch() {
                         <div className="grid grid-cols-2 gap-4">
                             {recentCelebrities.map((celebrity) => (
                                 <div key={celebrity.id} className="flex flex-col items-center">
-                                    <CloudFrontImage
+                                    <img
                                         src={celebrity.image}
                                         alt={celebrity.name}
                                         width={80}

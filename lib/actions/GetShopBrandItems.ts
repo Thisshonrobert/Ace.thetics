@@ -2,30 +2,47 @@
 
 import { prisma } from "@/prisma";
 import { Product } from "./GetProduct";
-import { auth } from "@/auth";
 
-export async function GetShopBrandItems(shopname: string, brandname: string,productId:number): Promise<Product[]> {
+export async function GetShopItems(shopname: string,productId:number): Promise<Product[]> {
     try {
-        const whereClause = brandname 
-            ? { shop: shopname, brandname: brandname }
-            : { shop: shopname };
+       
 
-        const shopBrandItems = await prisma.product.findMany({
-            where: whereClause,
+        const shopItems = await prisma.product.findMany({
+            where:{
+                shop:shopname
+            } ,
             take: 10,
-            orderBy: { id: 'desc' },
-            // include: {
-            //     wishList: true
-            // }
+            orderBy: { id: 'desc' }, 
         });
-
-        return shopBrandItems.map(item => ({
+        const filteredShopItems = shopItems.filter((product)=>product.id!==productId)
+        return filteredShopItems.map(item => ({
             ...item,
             image: item.imageUrl,
-            // isWishlisted: userId ? item.wishList.some(user => user.id === userId) : false
         }));
     } catch (error) {
         console.error("Failed to fetch shop brand items:", error);
         return [];
     }
+}
+export async function GetCategoryItems( category: string,productId:number): Promise<Product[]> {
+    try {
+       
+
+        const categoryItems = await prisma.product.findMany({
+            where:{
+                category:category
+            } ,
+            take: 10,
+            orderBy: { id: 'desc' }, 
+        });
+        const filteredCategoryItems = categoryItems.filter((product)=>product.id!==productId)
+        return filteredCategoryItems.map(item => ({
+            ...item,
+            image: item.imageUrl,
+        }));
+    } catch (error) {
+        console.error("Failed to fetch shop brand items:", error);
+        return [];
+    }
+
 }

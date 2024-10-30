@@ -6,7 +6,17 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { FileUpload } from "@/components/ui/file-upload";
+import { ImageKitProvider } from "imagekitio-next";
+import { toast } from 'react-toastify';
+
+const urlEndpoint = process.env.NEXT_PUBLIC_URL_ENDPOINT;
+const publicKey = process.env.NEXT_PUBLIC_PUBLIC_KEY;
+
+enum Gender {
+  Men = 'men',
+  Women = 'women',
+  Kids = 'kids',
+}
 
 interface Product {
   brandName: string;
@@ -14,36 +24,23 @@ interface Product {
   category: string;
   shop: string;
   link: string;
-  description:string;
+  description: string;
   image: File | null;
-}
-
-interface CelebrityPayload {
-  name: string;
-  socialId?: string;
-  dpImage?: string;
-  celebImages: string[];
-  products: {
-    brandName: string;
-    seoName: string;
-    category: string;
-    shop: string;
-    link: string;
-    imageUrl: string;
-  }[];
 }
 
 export default function AdminPageClient() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [celebName, setCelebName] = useState("");
-  const [socialId, setSocialId] = useState("");
-  const [celebFiles, setCelebFiles] = useState<File[]>([]);
-  const [dpFiles, setDpFiles] = useState<File[]>([]);
-  const [celebExists, setCelebExists] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    gender: "",
+    celebName: "",
+    socialId: "",
+    celebImages: [] as File[],
+    dpImage: null as File | null,
+    celebExists: false,
+    products: [] as Product[],
+  });
 
   const [currentProduct, setCurrentProduct] = useState<Product>({
     brandName: '',
@@ -51,10 +48,11 @@ export default function AdminPageClient() {
     category: '',
     shop: '',
     link: '',
-    description:'',
+    description: '',
     image: null,
   });
-  const [products, setProducts] = useState<Product[]>([]);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -63,203 +61,299 @@ export default function AdminPageClient() {
     }
   }, [session, status, router]);
 
-  const handleCelebFileUpload = (files: File[]) => {
-    setCelebFiles(prevFiles => [...prevFiles, ...files]);
+  const authenticator = async () => {
+    try {
+      const { data } = await axios.get("/api/imagekit-auth");
+      return data;
+    } catch (error) {
+      console.error("Authentication request failed:", error);
+      toast.error("Failed to get ImageKit authentication");
+      throw error;
+    }
   };
 
-  const handleDpFileUpload = (files: File[]) => {
-    setDpFiles(files);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleProductImageUpload = (files: File[]) => {
-    setCurrentProduct({ ...currentProduct, image: files[0] });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'dpImage' | 'celebImages') => {
+    const files = e.target.files;
+    if (files) {
+      if (field === 'dpImage') {
+        setFormData(prev => ({ ...prev, [field]: files[0] }));
+      } else {
+        setFormData(prev => ({ ...prev, [field]:[...prev.celebImages, ...Array.from(files)]}));
+      }
+    }
+    console.log(`${field} updated:`, files);
   };
 
   const handleCheck = async () => {
     setIsLoading(true);
-    setError(null);
     try {
-      const response = await axios.get(`/api/admin/check-celebrity?name=${encodeURIComponent(celebName)}`);
-      setCelebExists(response.data.exists);
+      const response = await axios.get(`/api/admin/check-celebrity?name=${encodeURIComponent(formData.celebName)}`);
+      setFormData(prev => ({ ...prev, celebExists: response.data.exists }));
+      toast.success(response.data.exists ? 'Celebrity found!' : 'New celebrity');
     } catch (error) {
       console.error('Error checking celebrity:', error);
-      setError('Failed to check celebrity. Please try again.');
+      toast.error('Failed to check celebrity. Please try again.');
     }
     setIsLoading(false);
   };
 
   const handleAddProduct = () => {
     if (currentProduct.image) {
-      setProducts([...products, currentProduct]);
+      setFormData(prev => ({ ...prev, products: [...prev.products, currentProduct] }));
       setCurrentProduct({
         brandName: '',
         seoName: '',
         category: '',
         shop: '',
         link: '',
-        description:'',
+        description: '',
         image: null,
       });
+      toast.success('Product added successfully');
+      console.log('Product added:', currentProduct);
     } else {
-      setError('Please upload a product image');
+      toast.error('Please upload a product image');
     }
   };
 
-  const uploadToS3 = async (file: File, type: 'celeb' | 'product' | 'dp') => {
+ 
+const uploadImage = async (files: File[], folder: string) => {
+  try {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', type);
+    
+    // Append all files with the same field name
+    files.forEach(file => {
+      formData.append("file", file);
+    });
+    formData.append("folder", folder);
 
-    try {
-      const response = await axios.post('/api/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+    console.log(`Uploading ${files.length} files to folder: ${folder}`);
+
+    const response = await axios.post("/api/imagekit-upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    console.log('Upload response:', response.data);
+    // If it's a single file upload, return the first URL
+    if (files.length === 1) {
+      return response.data[0].url;
+    }
+    // For multiple files, return array of URLs
+    return response.data.map((result: any) => result.url);
+  } catch (error) {
+    console.error("Error uploading images:", error);
+    toast.error("Failed to upload images");
+    throw new Error("Image upload failed");
+  }
+};
+
+const handlePost = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  try {
+    console.log('Starting post process');
+    
+    // Upload profile picture if exists
+    let dpImageUrl = "";
+    if (formData.dpImage) {
+      dpImageUrl = await uploadImage([formData.dpImage], "/dp");
+    }
+
+    // Upload celebrity images
+    let celebImageUrls: string[] = [];
+    if (formData.celebImages.length > 0) {
+      celebImageUrls = await uploadImage(formData.celebImages, "/celebrities");
+    }
+
+    // Upload product images
+    const productImageUrls = await Promise.all(
+      formData.products.map(async (product) => {
+        if (!product.image) throw new Error("Product image is required");
+        const imageUrl = await uploadImage([product.image], "/products");
+        return { ...product, imageUrl };
+      })
+    );
+
+    const payload = {
+      name: formData.celebName,
+      celebImages: celebImageUrls,
+      products: productImageUrls.map((product) => ({
+        brandName: product.brandName,
+        seoName: product.seoName,
+        category: product.category,
+        shop: product.shop,
+        link: product.link,
+        description: product.description,
+        imageUrl: product.imageUrl,
+      })),
+      ...(formData.celebExists ? {} : {
+        socialId: formData.socialId,
+        gender: formData.gender as Gender,
+        dpImage: dpImageUrl,
+      }),
+    };
+
+    console.log('Sending payload:', payload);
+    const response = await axios.post('/api/admin/create-celebrity', payload);
+
+    if (response.status === 200 || response.status === 201) {
+      toast.success(formData.celebExists ? 'Celebrity updated successfully!' : 'Celebrity and products added successfully!');
+      setFormData({
+        gender: "",
+        celebName: "",
+        socialId: "",
+        celebImages: [],
+        dpImage: null,
+        celebExists: false,
+        products: [],
       });
-      return response.data.url;
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      if (axios.isAxiosError(error) && error.response) {
-        throw new Error(`Failed to upload image: ${error.response.data.error}`);
-      }
-      throw new Error('Failed to upload image');
     }
-  };
-
-  const handlePost = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const celebImageUrls = await Promise.all(celebFiles.map(file => uploadToS3(file, 'celeb')));
-      const productImageUrls = await Promise.all(products.map(product => uploadToS3(product.image!, 'product')));
-
-      const payload: CelebrityPayload = {
-        name: celebName,
-        celebImages: celebImageUrls,
-        products: products.map((product, index) => ({
-          ...product,
-          imageUrl: productImageUrls[index],
-        })),
-      };
-
-      if (!celebExists) {
-        payload.socialId = socialId;
-        if (dpFiles.length > 0) {
-          payload.dpImage = await uploadToS3(dpFiles[0], 'dp');
-        }
-      }
-
-      const response = await axios.post('/api/admin/create-celebrity', payload);
-
-      if (response.status === 200 || response.status === 201) {
-        alert(celebExists ? 'Celebrity updated successfully!' : 'Celebrity and products added successfully!');
-        setCelebName('');
-        setSocialId('');
-        setCelebFiles([]);
-        setDpFiles([]);
-        setProducts([]);
-        setCelebExists(false);
-      } else {
-        throw new Error('Failed to add/update celebrity and products');
-      }
-    } catch (error) {
-      console.error('Error posting celebrity:', error);
-      setError('Failed to add/update celebrity and products. Please try again.');
-    }
-    setIsLoading(false);
-  };
+  } catch (error) {
+    console.error('Error posting celebrity:', error);
+    toast.error('Failed to add/update celebrity and products. Please try again.');
+  }
+  setIsLoading(false);
+};
 
   return (
-    <div className='max-w-xl flex flex-col items-center justify-center mx-auto space-y-3'>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <Input 
-        onChange={(e) => setCelebName(e.target.value)} 
-        value={celebName} 
-        placeholder='Celeb name' 
-      />
-      <Button onClick={handleCheck} disabled={isLoading}>
-        {isLoading ? 'Checking...' : 'Check'}
-      </Button>
-      
-      {!celebExists && (
-        <>
-          <Input 
-            onChange={(e) => setSocialId(e.target.value)} 
-            value={socialId} 
-            placeholder='Social ID' 
-          />
-          <label>Celeb DP</label>
-          <div className="w-full max-w-4xl mx-auto min-h-96 border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg mt-4">
-            <FileUpload onChange={handleDpFileUpload} />
-          </div>
-        </>
-      )}
-      
-      <label>Celeb post pics (multiple)</label>
-      <div className="w-full max-w-4xl mx-auto min-h-96 border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg mt-4">
-        <FileUpload onChange={handleCelebFileUpload} multiple />
-      </div>
-      
-      {celebFiles.length > 0 && (
-        <div>
-          <h3>Selected Celebrity Images:</h3>
-          {celebFiles.map((file, index) => (
-            <p key={index}>{file.name}</p>
-          ))}
-        </div>
-      )}
-
-      <h2>Add Products</h2>
-      <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
-        value={currentProduct.brandName} 
-        placeholder='Brand name' 
-      />
-       <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
-        value={currentProduct.description} 
-        placeholder='Description' 
-      />
-      <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
-        value={currentProduct.seoName} 
-        placeholder='SEO name' 
-      />
-      <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })} 
-        value={currentProduct.category} 
-        placeholder='Category' 
-      />
-      <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
-        value={currentProduct.shop} 
-        placeholder='Shop' 
-      />
-      <Input 
-        onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
-        value={currentProduct.link} 
-        placeholder='Link' 
-      />
-      <label>Product Image</label>
-      <div className="w-full max-w-4xl mx-auto min-h-96 border border-dashed bg-white dark:bg-black border-neutral-200 dark:border-neutral-800 rounded-lg mt-4">
-        <FileUpload onChange={handleProductImageUpload} />
-      </div>
-      <Button onClick={handleAddProduct}>Add Product</Button>
-
-      <div>
-        <h3>Added Products:</h3>
-        {products.map((product, index) => (
-          <div key={index}>
-            <p>{product.brandName} - {product.category}</p>
-          </div>
-        ))}
-      </div>
-
-      {products.length > 0 && (
-        <Button onClick={handlePost} disabled={isLoading}>
-          {isLoading ? (celebExists ? 'Updating...' : 'Posting...') : (celebExists ? 'Update Celebrity and Products' : 'Post Celebrity and Products')}
+    <ImageKitProvider 
+      publicKey={publicKey!} 
+      urlEndpoint={urlEndpoint!} 
+      authenticator={authenticator}
+    >
+      <form onSubmit={handlePost} className='max-w-xl flex flex-col items-center justify-center mx-auto space-y-3 mt-[10%]'>
+        <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
+        
+        <Input 
+          name="celebName"
+          onChange={handleInputChange} 
+          value={formData.celebName} 
+          placeholder='Celebrity name' 
+          required
+        />
+        <Button type="button" onClick={handleCheck} disabled={isLoading}>
+          {isLoading ? 'Checking...' : 'Check Celebrity'}
         </Button>
-      )}
-    </div>
+        
+        {!formData.celebExists && (
+          <>
+            <Input 
+              name="socialId"
+              onChange={handleInputChange} 
+              value={formData.socialId} 
+              placeholder='Social ID' 
+              required
+            />
+            <label className="font-semibold">Gender</label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              required
+            >
+              <option value="">Select Gender</option>
+              {Object.values(Gender).map((g) => (
+                <option key={g} value={g}>
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </option>
+              ))}
+            </select>
+            <label className="font-semibold">Celebrity Profile Picture</label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, 'dpImage')}
+              accept="image/*"
+              className="w-full p-2 border rounded"
+              required
+            />
+          </>
+        )}
+        
+        <label className="font-semibold">Celebrity Post Images (Multiple)</label>
+        <input
+          type="file"
+          onChange={(e) => handleFileChange(e, 'celebImages')}
+          accept="image/*"
+          multiple
+          className="w-full p-2 border rounded"
+          required
+        />
+        {formData.celebImages.length > 0 && (
+          <div>
+            <h3 className="font-semibold">Selected Images:</h3>
+            <ul>
+              {formData.celebImages.map((file, index) => (
+                <li key={index}>{file.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        <h2 className="text-xl font-bold mt-8">Add Products</h2>
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
+          value={currentProduct.brandName} 
+          placeholder='Brand name' 
+        />
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} 
+          value={currentProduct.description} 
+          placeholder='Description' 
+        />
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
+          value={currentProduct.seoName} 
+          placeholder='SEO name' 
+        />
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })} 
+          value={currentProduct.category} 
+          placeholder='Category' 
+        />
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
+          value={currentProduct.shop} 
+          placeholder='Shop' 
+        />
+        <Input 
+          onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
+          value={currentProduct.link} 
+          placeholder='Link' 
+        />
+        <label className="font-semibold">Product Image</label>
+        <input
+          type="file"
+          onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.files?.[0] || null })}
+          accept="image/*"
+          className="w-full p-2 border rounded"
+        />
+        <Button type="button" onClick={handleAddProduct}>Add Product</Button>
+
+        {formData.products.length > 0 && (
+          <div>
+            <h3 className="font-semibold">Added Products:</h3>
+            <ul>
+              {formData.products.map((product, index) => (
+                <li key={index}>
+                  {product.brandName} - {product.category}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {formData.products.length > 0 && (
+          <Button type="submit" disabled={isLoading} className="mt-4">
+            {isLoading ? (formData.celebExists ? 'Updating...' : 'Posting...') : (formData.celebExists ? 'Update Celebrity and Products' : 'Post Celebrity and Products')}
+          </Button>
+        )}
+      </form>
+    </ImageKitProvider>
   );
 }
-
-//if any error check description

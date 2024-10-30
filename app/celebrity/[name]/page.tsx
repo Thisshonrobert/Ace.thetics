@@ -9,9 +9,9 @@ export default async function CelebrityPage({
 }) {
   const posts = await GetCelebrity(decodeURIComponent(params.name));
   return (
-    <div>
+    <div className="mt-[8%]">
       {posts.length > 0 && <DpComponent post={posts[0]} />}
-      <div className="space-y-8">
+      <div className="space-y-4">
         {posts.length > 0 ? (
           posts.map((post) => (
             <Post
@@ -21,7 +21,7 @@ export default async function CelebrityPage({
               celebrityName={post.celebrityName}
               postDate={post.postDate}
               products={post.products}
-              id={post.id} initialLikedState={false}            />
+              id={post.id}  />
           ))
         ) : (
           <p className="text-center text-gray-500">No posts found.</p>

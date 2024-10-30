@@ -31,7 +31,7 @@ model Product {
   imageUrl    String        @unique
   PostProduct PostProduct[]
 
-  @@index([shop, brandname])
+  @@index([shop, category])
 }
 
 

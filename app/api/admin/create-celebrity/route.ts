@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 
+
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { name, socialId, dpImage, celebImages, products } = await req.json();
-
-  if (!name || !celebImages || !products || !Array.isArray(celebImages)) {
-    return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
-  }
-
   try {
+    const { name, socialId, dpImage, gender, celebImages, products } = await req.json();
+
+    if (!name || !celebImages || !products || !Array.isArray(celebImages) || !Array.isArray(products)) {
+      return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
+    }
+
     let celebrity = await prisma.celebrity.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
     });
@@ -21,7 +22,11 @@ export async function POST(req: NextRequest) {
     if (celebrity) {
       celebrity = await prisma.celebrity.update({
         where: { id: celebrity.id },
-        data: { name },
+        data: { 
+          name,
+          dp: dpImage,
+          gender: gender as 'men' | 'women' | 'kids' | null,
+        },
       });
     } else {
       if (!socialId || !dpImage) {
@@ -32,6 +37,7 @@ export async function POST(req: NextRequest) {
           name,
           socialmediaId: socialId,
           dp: dpImage,
+          gender: gender as 'men' | 'women' | 'kids' | null,
         },
       });
     }
@@ -39,8 +45,7 @@ export async function POST(req: NextRequest) {
     const post = await prisma.post.create({
       data: {
         celebrityId: celebrity.id,
-        imageUrl: celebImages, // Now using the entire array of images
-        Liked: false,
+        imageUrl: celebImages,
         products: {
           create: products.map((product: any) => ({
             Product: {
@@ -48,10 +53,10 @@ export async function POST(req: NextRequest) {
                 brandname: product.brandName,
                 seoname: product.seoName,
                 category: product.category,
-                whishList: false,
                 shop: product.shop,
                 link: product.link,
                 imageUrl: product.imageUrl,
+                description: product.description || "Elevate your style, embrace the trend!",
               },
             },
           })),
@@ -70,5 +75,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error creating/updating celebrity:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }

@@ -17,7 +17,8 @@ export async function GET(req: NextRequest) {
     const celebrity = await prisma.celebrity.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
     });
-
+    if(celebrity) console.log("exists");
+    else console.log("does not exists")
     return NextResponse.json({ exists: !!celebrity });
   } catch (error) {
     console.error('Error checking celebrity:', error);

@@ -7,7 +7,7 @@ import { useSession } from "next-auth/react";
 import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { HiArrowNarrowRight } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
-import CloudFrontImage from "./CloudFrontImage";
+import ImageComponent from "./ImageComponent";
 import { shops } from "@/constants/shop";
 import { likePost } from "@/lib/actions/LikePost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -70,7 +70,6 @@ export default function PostComponent({
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
 
-    // Optimistic update
     setLikedPosts(prev => 
       newLikedState
         ? [...prev, { id, celebrityImages, celebrityDp, celebrityName, postDate, products }]
@@ -84,7 +83,6 @@ export default function PostComponent({
       }
     } catch (error) {
       console.error('Failed to like post:', error);
-      // Revert the optimistic update on error
       setIsLiked(!newLikedState);
       setLikedPosts(prev => 
         newLikedState
@@ -105,79 +103,96 @@ export default function PostComponent({
   };
 
   return (
-    <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4">
+    <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4 border">
       {/* Desktop View */}
-      <div className="hidden sm:flex">
-        <div className="w-1/2 relative overflow-hidden">
+      <div className="hidden sm:flex h-[420px]">
+        <div className="w-1/2 relative">
           {celebrityImages.map((image, index) => (
-            <CloudFrontImage
-              key={index}
-              src={image}
-              alt={`${celebrityName} ${index + 1}`}
-              width={500}
-              height={480}
-              className={`object-cover w-full absolute top-0 left-0 transition-opacity duration-300 ${
+            <div 
+              key={index} 
+              className={`absolute inset-0 transition-opacity duration-300 ${
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
-            />
+            >
+              <ImageComponent
+                src={image}
+                alt={`${celebrityName} ${index + 1}`}
+                transformation={[{
+                  height: "680",
+                  width: "500",
+                  quality: "90",
+                  focus: "auto"
+                }]}
+                className="h-full w-full object-cover"
+                loading={index === 0 ? undefined : "lazy"}
+              />
+            </div>
           ))}
           <div
             className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity duration-300 cursor-pointer"
-            onMouseEnter={() =>
-              setCurrentImageIndex(
-                (prev) => (prev + 1) % celebrityImages.length
-              )
-            }
+            onMouseEnter={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
             onMouseLeave={() => setCurrentImageIndex(0)}
           />
         </div>
-        <div className="w-1/2 p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-gray-100">
-            <div className="flex items-center hover:cursor-pointer" onClick={() => router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
-              <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
-                <CloudFrontImage
-                  src={celebrityDp}
-                  alt={celebrityName}
-                  width={40}
-                  height={40}
-                  className="object-cover w-full h-full"
-                />
+        <div className="w-1/2 flex flex-col h-full">
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center hover:cursor-pointer" onClick={() => router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
+                  <ImageComponent
+                    src={celebrityDp}
+                    alt={celebrityName}
+                    transformation={[{
+                      height: "100",
+                      width: "100",
+                      quality: "90",
+                      focus: "face",
+                      crop: "at_max"
+                    }]}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+                <div>
+                  <h2 className="font-bold">{celebrityName}</h2>
+                  <p className="text-sm text-gray-500">{postDate}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-bold">{celebrityName}</h2>
-                <p className="text-sm text-gray-500">{postDate}</p>
-              </div>
+              <AnimatePresence>
+                <motion.button
+                  onClick={handleLike}
+                  className="focus:outline-none"
+                  initial={false}
+                  animate={isLiked ? "liked" : "unliked"}
+                  variants={heartVariants}
+                >
+                  <Heart
+                    className={`h-6 w-6 ${
+                      isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                    }`}
+                  />
+                </motion.button>
+              </AnimatePresence>
             </div>
-           
-            <AnimatePresence>
-              <motion.button
-                onClick={handleLike}
-                className="focus:outline-none"
-                initial={false}
-                animate={isLiked ? "liked" : "unliked"}
-                variants={heartVariants}
-              >
-                <Heart
-                  className={`h-6 w-6 ${
-                    isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-                  }`}
-                />
-              </motion.button>
-            </AnimatePresence>
           </div>
-          <div className="flex-grow overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-4 min-h-[500px]">
             {products.map((product) => (
               <div
                 key={product.id}
                 className="flex items-center space-x-3 p-2 rounded-lg border-b mb-2 shadow-md hover:cursor-pointer"
                 onClick={() => handleProductClick(product)}
               >
-                <CloudFrontImage
+                <ImageComponent
                   src={product.image}
                   alt={product.seoname}
-                  width={48}
-                  height={48}
-                  className="rounded-md ml-2"
+                  transformation={[{
+                    height: "200",
+                    width: "200", 
+                    quality: "80",
+                    focus: "auto",
+                    crop: "at_max",
+                    background: "white" 
+                  }]}
+                  className="rounded-md ml-2 w-[80px] h-[80px] object-cover"
                 />
                 <div className="flex-grow pl-6">
                   <h3 className="font-bold">{product.brandname}</h3>
@@ -186,10 +201,7 @@ export default function PostComponent({
                     <p className="text-sm text-gray-600">shop from: </p>
                     <Avatar className="ml-2">
                       <AvatarImage
-                        src={
-                          shops.find((shop) => shop.name === product.shop)
-                            ?.image
-                        }
+                        src={shops.find((shop) => shop.name === product.shop)?.image}
                       />
                       <AvatarFallback>{product.shop}</AvatarFallback>
                     </Avatar>
@@ -206,46 +218,54 @@ export default function PostComponent({
       <div className="sm:hidden">
         <div className="relative w-full h-[calc(100vh-200px)]">
           {celebrityImages.map((image, index) => (
-            <CloudFrontImage
+            <div 
               key={index}
-              src={image}
-              alt={`${celebrityName} ${index + 1}`}
-              fill
-              className={`object-cover transition-opacity duration-300 ${
+              className={`absolute inset-0 transition-opacity duration-300 ${
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
-              priority={index === 0}
-            />
+            >
+              <ImageComponent
+                src={image}
+                alt={`${celebrityName} ${index + 1}`}
+                transformation={[{
+                  height: "800",
+                  width: "600",
+                  quality: "90",
+                  focus: "auto",
+                  crop: "at_max"
+                }]}
+                className="h-full w-full object-cover"
+                loading={index === 0 ? undefined : "lazy"}
+              />
+            </div>
           ))}
           <div
             className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity duration-300"
-            onTouchStart={() =>
-              setCurrentImageIndex(
-                (prev) => (prev + 1) % celebrityImages.length
-              )
-            }
+            onTouchStart={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
           <div className="absolute bottom-0 left-0 right-0 top-[90%] p-4">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2">
               <div className="flex items-center">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white">
-                  <CloudFrontImage
+                  <ImageComponent
                     src={celebrityDp}
                     alt={celebrityName}
-                    width={40}
-                    height={40}
+                    transformation={[{
+                      height: "150",
+                      width: "150",
+                      quality: "90",
+                      focus: "face",
+                      crop: "at_max"
+                    }]}
                     className="object-cover w-full h-full"
                   />
                 </div>
                 <div>
-                  <h2 className="font-bold text-sm">
-                    {celebrityName.split(" ")[0]}
-                  </h2>
+                  <h2 className="font-bold text-sm">{celebrityName.split(" ")[0]}</h2>
                   <p className="text-xs text-gray-500">{postDate}</p>
                 </div>
               </div>
-              
               <AnimatePresence>
                 <motion.button
                   onClick={handleLike}
@@ -275,11 +295,16 @@ export default function PostComponent({
                 className="flex-shrink-0 w-20"
                 onClick={() => handleProductClick(product)}
               >
-                <CloudFrontImage
+                <ImageComponent
                   src={product.image}
                   alt={product.seoname}
-                  width={80}
-                  height={80}
+                  transformation={[{
+                    height: "200",
+                    width: "200",
+                    quality: "80",
+                    focus: "auto",
+                    crop: "at_max"
+                  }]}
                   className="rounded-md w-42 h-20 object-cover"
                 />
                 <p className="mt-2 font-semibold text-xs truncate">
@@ -289,9 +314,7 @@ export default function PostComponent({
                   <p className="text-sm text-gray-600">shop:</p>
                   <Avatar className="ml-2">
                     <AvatarImage
-                      src={
-                        shops.find((shop) => shop.name === product.shop)?.image
-                      }
+                      src={shops.find((shop) => shop.name === product.shop)?.image}
                     />
                     <AvatarFallback>{product.shop}</AvatarFallback>
                   </Avatar>

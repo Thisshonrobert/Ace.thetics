@@ -27,7 +27,7 @@ const menuItems = [
   { icon: Heart, label: "Liked",route:"/liked" },
   { icon: List, label: "Wishlist",route:"/WishList" },
   { icon: ShoppingBag, label: "Products",route:"/Products" },
-  { icon: Tag, label: "Shops",route:"/Shops" },
+  // { icon: Tag, label: "Shops",route:"/Shops" },
 ];
 
 export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

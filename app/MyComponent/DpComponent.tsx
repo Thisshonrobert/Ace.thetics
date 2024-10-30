@@ -1,7 +1,7 @@
 'use client'
 import React from 'react'
-import CloudFrontImage from './CloudFrontImage';
 import { Instagram } from 'lucide-react';
+import ImageComponent from './ImageComponent';
 
 interface PostDp {
   id: number;
@@ -28,7 +28,7 @@ const DpComponent: React.FC<DpComponentProps> = ({ post }) => {
   return (
     <div className="w-full max-w-3xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden mt-4">
       <div className="relative h-64 sm:h-80">
-        <CloudFrontImage
+        <ImageComponent
           src={post.celebrityDp}
           alt={post.celebrityName}
           className="absolute inset-0 object-cover w-full h-full"
