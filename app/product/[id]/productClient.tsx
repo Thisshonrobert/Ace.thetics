@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import ProductCard from "@/app/MyComponent/ProductCard"
 import { GetProduct, Product } from "@/lib/actions/GetProduct"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import CloudFrontImage from '@/app/MyComponent/CloudFrontImage'
+import ImageComponent from '@/app/MyComponent/ImageComponent'
 import Link from 'next/link'
-import {  GetCategoryItems, GetShopItems } from '@/lib/actions/GetShopBrandItems'
+import { GetCategoryItems, GetShopItems } from '@/lib/actions/GetShopBrandItems'
+import { toggleWishlist } from '@/lib/actions/Wishlist'
+import { useSession } from 'next-auth/react'
 
 interface ProductCarouselProps {
   items: Product[]
@@ -24,10 +26,10 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title }) => {
 
   return (
     <div className="mt-8">
-        <div className='flex items-center mb-3'>
-             <h1 className='font-poppins text-md text-gray-500 '>Discover More from </h1>
+      <div className='flex items-center mb-3'>
+        <h1 className='font-poppins text-md text-gray-500'>Discover More from </h1>
         <h2 className="text-lg font-poppins underline font-semibold ml-2 text-gray-500">{title}</h2>
-</div>
+      </div>
       <div className="relative">
         <button 
           onClick={() => scrollProducts('left')} 
@@ -42,12 +44,19 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title }) => {
         >
           {items.map((item) => (
             <Link href={`/product/${item.id}`} key={item.id} className="flex-shrink-0 w-32 ml-4 mr-4">
-              <CloudFrontImage
+              <ImageComponent
                 src={item.imageUrl}
                 alt={item.seoname}
                 width={128}
                 height={128}
                 className="w-full h-32 object-cover rounded-md"
+                transformation={[{
+                  width: "128",
+                  height: "128",
+                  quality: "80",
+                  crop: "at_max",
+                  focus: "auto"
+                }]}
               />
               <h3 className="mt-1 text-xs font-medium truncate">{item.seoname}</h3>
               <p className="text-xs text-gray-500 truncate">{item.brandname}</p>
@@ -74,37 +83,84 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
   const [product, setProduct] = useState<Product | null>(null)
   const [categoryItems, setCategoryItems] = useState<Product[]>([])
   const [shopItems, setShopItems] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const { data: session } = useSession();
 
+  
   useEffect(() => {
     const fetchData = async () => {
-      const fetchedProduct = await GetProduct(productId)
-      setProduct(fetchedProduct)
+      try {
+        setIsLoading(true)
+        setError(null)
+        const fetchedProduct = await GetProduct(productId)
+        setProduct(fetchedProduct)
 
-      if (fetchedProduct) {
-        const categoryItems = await GetCategoryItems( fetchedProduct.category,productId)
-        setCategoryItems(categoryItems)
-
-        const shopItems = await GetShopItems(fetchedProduct.shop,productId)
-        setShopItems(shopItems)
+        if (fetchedProduct) {
+          const [categoryItems, shopItems] = await Promise.all([
+            GetCategoryItems(fetchedProduct.category, productId),
+            GetShopItems(fetchedProduct.shop, productId)
+          ])
+          setCategoryItems(categoryItems)
+          setShopItems(shopItems)
+          
+          // Check if the product is wishlisted
+          if (session?.user?.id) {
+            const isProductWishlisted = fetchedProduct.wishList.some(item => item.id === (session?.user?.id))
+            setIsWishlisted(isProductWishlisted)
+          }
+        }
+      } catch (err) {
+        setError('Failed to load product data')
+        console.error(err)
+      } finally {
+        setIsLoading(false)
       }
     }
 
     fetchData()
-  }, [productId])
+  }, [productId, session])
+
+  const handleWishlistToggle = async () => {
+    if (!product || !session?.user?.id) return
+    setIsWishlisted(!isWishlisted);
+    try {
+      const result = await toggleWishlist(product.id)
+      if (result.success) {
+        setIsWishlisted(result.wishlisted)
+      }
+      else {
+        setIsWishlisted(false)
+      }
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error)
+    }
+  }
+
+  if (isLoading) {
+    return <div className="text-center mt-8">Loading...</div>
+  }
+
+  if (error) {
+    return <div className="text-center mt-8 text-red-500">{error}</div>
+  }
 
   if (!product) {
-    return <div>Product not found</div>
+    return <div className="text-center mt-8">Product not found</div>
   }
 
   return (
     <div className="max-w-6xl mx-auto mt-4 px-4 bg-zinc-50 rounded-xl">
-      <div className="mb-6 pt-6 max-w-sm mx-auto ">
+      <div className="mb-6 pt-6 max-w-sm mx-auto">
         <ProductCard 
-          image={product.imageUrl} 
-          alt={product.brandname} 
-          seoname={product.seoname} 
-          description={product.description} 
+          image={product.imageUrl}
+          alt={product.brandname}
+          seoname={product.seoname}
+          description={product.description}
           link={product.link}
+          isWishlisted={isWishlisted}
+          onWishlistToggle={handleWishlistToggle}
         />
       </div>
 

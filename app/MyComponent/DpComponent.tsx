@@ -1,41 +1,51 @@
 'use client'
+
 import React from 'react'
-import { Instagram } from 'lucide-react';
-import ImageComponent from './ImageComponent';
+import { Instagram } from 'lucide-react'
+import ImageComponent from './ImageComponent'
 
 interface PostDp {
-  id: number;
-  celebrityImages: string[];
-  celebrityName: string;
-  celebrityDp: string;
-  celebritySocialMedia: string;
-  postDate: string;
+  id: number
+  celebrityImages: string[]
+  celebrityName: string
+  celebrityDp: string
+  celebritySocialMedia: string
+  postDate: string
   products: {
-    id: number;
-    category: string;
-    brandname: string;
-    seoname: string;
-    shop: string;
-    image: string;
-  }[];
+    id: number
+    category: string
+    brandname: string
+    seoname: string
+    shop: string
+    image: string
+  }[]
 }
 
 interface DpComponentProps {
-  post: PostDp;
+  post: PostDp
 }
 
-const DpComponent: React.FC<DpComponentProps> = ({ post }) => {
+export default function DpComponent({ post }: DpComponentProps) {
   return (
     <div className="w-full max-w-3xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden mt-4">
       <div className="relative h-64 sm:h-80">
-        <ImageComponent
-          src={post.celebrityDp}
-          alt={post.celebrityName}
-          className="absolute inset-0 object-cover w-full h-full"
-          width={1200}
-          height={800}
-        />
-        <div className="absolute inset-0 " />
+        <div className="absolute inset-0">
+          <ImageComponent
+            src={post.celebrityDp}
+            alt={post.celebrityName}
+            className="w-full h-full object-cover"
+            transformation={[{
+              width: "1200",
+              height: "800",
+              quality: "90",
+              crop: "maintain_ratio"
+            }]}
+            lqip={{ active: true, quality: 80 }}
+            loading="lazy"
+            fill={true}
+          />
+        </div>
+        <div className="absolute inset-0 bg-black bg-opacity-30" />
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
           <h1 className="text-3xl font-bold text-white">{post.celebrityName}</h1>
           <a
@@ -51,5 +61,3 @@ const DpComponent: React.FC<DpComponentProps> = ({ post }) => {
     </div>
   )
 }
-
-export default DpComponent

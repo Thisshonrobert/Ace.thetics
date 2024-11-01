@@ -42,7 +42,25 @@ export async function toggleWishlist(productId: number) {
     })
   }
 
-  revalidatePath('/') // Adjust this path as needed
+  revalidatePath('/wishlist') // Adjust this path as needed
 
   return { success: true, wishlisted: !userWishlisted }
+}
+
+export async function GetAllWishlistedProduct() {
+  const session = await auth()
+  if (!session || !session.user) {
+    throw new Error('You must be logged in to view your wishlist')
+  }
+
+  const userId = session.user.id
+
+  const wishlistedProducts = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      wishList: true
+    }
+  })
+
+  return wishlistedProducts?.wishList || []
 }

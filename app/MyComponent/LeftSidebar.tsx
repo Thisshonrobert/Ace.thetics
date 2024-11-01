@@ -25,7 +25,7 @@ const menuItems = [
   { icon: IoIosFemale, label: "Women",route:"/filter/women" },
   { icon: FaBabyCarriage, label: "Kids",route:"/filter/kids" },
   { icon: Heart, label: "Liked",route:"/liked" },
-  { icon: List, label: "Wishlist",route:"/WishList" },
+  { icon: List, label: "Wishlist",route:"/wishlist" },
   { icon: ShoppingBag, label: "Products",route:"/Products" },
   // { icon: Tag, label: "Shops",route:"/Shops" },
 ];

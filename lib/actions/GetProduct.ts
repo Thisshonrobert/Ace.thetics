@@ -11,7 +11,7 @@ export interface Product {
   imageUrl: string;
   link: string;
   description: string;
-  wishList?:boolean
+  wishList: { id: string }[]; 
 }
 
 export async function GetProduct(productid: number): Promise<Product | null> {
@@ -19,6 +19,13 @@ export async function GetProduct(productid: number): Promise<Product | null> {
     const product = await prisma.product.findFirst({
       where: {
         id: productid
+      },
+      include: {
+        wishList: {
+          select: {
+            id: true
+          }
+        }
       }
     });
 
@@ -33,7 +40,7 @@ export async function GetProduct(productid: number): Promise<Product | null> {
       imageUrl: product.imageUrl,
       link: product.link,
       description: product.description,
-     
+      wishList: product.wishList.map((user) => ({ id: user.id })),
     };
 
   } catch (error) {

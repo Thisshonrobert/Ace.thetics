@@ -43,7 +43,7 @@ export async function likePost(postId: number) {
     })
   }
 
-  revalidatePath('/') // Adjust this path as needed
+  revalidatePath('/liked') // Adjust this path as needed
 
   return { success: true, liked: !userLiked }
 }
