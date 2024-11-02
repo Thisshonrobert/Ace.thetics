@@ -9,13 +9,16 @@ import Link from 'next/link'
 import { GetCategoryItems, GetShopItems } from '@/lib/actions/GetShopBrandItems'
 import { toggleWishlist } from '@/lib/actions/Wishlist'
 import { useSession } from 'next-auth/react'
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from '@/hooks/use-toast'
 
 interface ProductCarouselProps {
   items: Product[]
   title: string
+  isLoading: boolean
 }
 
-const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title }) => {
+const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title, isLoading }) => {
   const scrollProducts = (direction: 'left' | 'right') => {
     const container = document.getElementById(`${title.replace(/\s+/g, '')}Container`)
     if (container) {
@@ -42,26 +45,35 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title }) => {
           id={`${title.replace(/\s+/g, '')}Container`}
           className="flex overflow-x-auto scrollbar-hide space-x-6 pb-4 mx-auto font-poppins font-semibold"
         >
-          {items.map((item) => (
-            <Link href={`/product/${item.id}`} key={item.id} className="flex-shrink-0 w-32 ml-4 mr-4">
-              <ImageComponent
-                src={item.imageUrl}
-                alt={item.seoname}
-                width={128}
-                height={128}
-                className="w-full h-32 object-cover rounded-md"
-                transformation={[{
-                  width: "128",
-                  height: "128",
-                  quality: "80",
-                  crop: "at_max",
-                  focus: "auto"
-                }]}
-              />
-              <h3 className="mt-1 text-xs font-medium truncate">{item.seoname}</h3>
-              <p className="text-xs text-gray-500 truncate">{item.brandname}</p>
-            </Link>
-          ))}
+          {isLoading
+            ? Array(5).fill(0).map((_, index) => (
+                <div key={index} className="flex-shrink-0 w-32 ml-4 mr-4">
+                  <Skeleton className="w-full h-32 rounded-md" />
+                  <Skeleton className="h-4 w-full mt-1" />
+                  <Skeleton className="h-3 w-3/4 mt-1" />
+                </div>
+              ))
+            : items.map((item) => (
+                <Link href={`/product/${item.id}`} key={item.id} className="flex-shrink-0 w-32 ml-4 mr-4">
+                  <ImageComponent
+                    src={item.imageUrl}
+                    alt={item.seoname}
+                    width={128}
+                    height={128}
+                    className="w-full h-32 object-cover rounded-md"
+                    transformation={[{
+                      width: "128",
+                      height: "128",
+                      quality: "80",
+                      crop: "at_max",
+                      focus: "auto"
+                    }]}
+                  />
+                  <h3 className="mt-1 text-xs font-medium truncate">{item.seoname}</h3>
+                  <p className="text-xs text-gray-500 truncate">{item.brandname}</p>
+                </Link>
+              ))
+          }
         </div>
         <button 
           onClick={() => scrollProducts('right')} 
@@ -86,9 +98,9 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isWishlisted, setIsWishlisted] = useState(false)
-  const { data: session } = useSession();
+  const { data: session } = useSession()
+  const { toast } = useToast()
 
-  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -124,22 +136,46 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
 
   const handleWishlistToggle = async () => {
     if (!product || !session?.user?.id) return
-    setIsWishlisted(!isWishlisted);
+    setIsWishlisted(!isWishlisted)
     try {
       const result = await toggleWishlist(product.id)
       if (result.success) {
         setIsWishlisted(result.wishlisted)
-      }
-      else {
+        toast({
+          title: result.wishlisted ? "Added to Wishlist" : "Removed from Wishlist",
+          description: result.wishlisted ? `${product.seoname} has been added to your wishlist.` : `${product.seoname} has been removed from your wishlist.`,
+        })
+      } else {
         setIsWishlisted(false)
+        toast({
+          title: "Error",
+          description: "Failed to update wishlist. Please try again.",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Failed to toggle wishlist:', error)
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
   if (isLoading) {
-    return <div className="text-center mt-8">Loading...</div>
+    return (
+      <div className="max-w-6xl mx-auto mt-4 px-4 bg-zinc-50 rounded-xl">
+        <div className="mb-6 pt-6 max-w-sm mx-auto">
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+        </div>
+        <div className="bg-white max-w-5xl shadow-lg rounded-lg p-6 mx-auto">
+          <ProductCarousel items={[]} title="Category" isLoading={true} />
+          <div className='border'></div>
+          <ProductCarousel items={[]} title="Shop" isLoading={true} />
+        </div>
+      </div>
+    )
   }
 
   if (error) {
@@ -165,10 +201,12 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
       </div>
 
       <div className="bg-white max-w-5xl shadow-lg rounded-lg p-6 mx-auto">
-        <ProductCarousel items={categoryItems} title={`${product.category}`} />
+        <ProductCarousel items={categoryItems} title={`${product.category}`} isLoading={false} />
         <div className='border'></div>
-        <ProductCarousel items={shopItems} title={`${product.shop}`} />
+        <ProductCarousel items={shopItems} title={`${product.shop}`} isLoading={false} />
       </div>
     </div>
   )
 }
+
+

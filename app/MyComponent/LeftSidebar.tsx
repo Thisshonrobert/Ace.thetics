@@ -26,7 +26,7 @@ const menuItems = [
   { icon: FaBabyCarriage, label: "Kids",route:"/filter/kids" },
   { icon: Heart, label: "Liked",route:"/liked" },
   { icon: List, label: "Wishlist",route:"/wishlist" },
-  { icon: ShoppingBag, label: "Products",route:"/Products" },
+  // { icon: ShoppingBag, label: "Products",route:"/Products" },
   // { icon: Tag, label: "Shops",route:"/Shops" },
 ];
 

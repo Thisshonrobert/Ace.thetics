@@ -1,34 +1,35 @@
 'use client'
 
-import { useState, useRef } from "react";
-import { useRecoilState } from 'recoil';
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
-import { HiArrowNarrowRight } from "react-icons/hi";
-import { motion, AnimatePresence } from "framer-motion";
-import ImageComponent from "./ImageComponent";
-import { shops } from "@/constants/shop";
-import { likePost } from "@/lib/actions/LikePost";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { likedPostsState } from "../store/likedPostAtom";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState, useRef, useEffect } from "react"
+import { useRecoilState } from 'recoil'
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+import { ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import { HiArrowNarrowRight } from "react-icons/hi"
+import { motion, AnimatePresence } from "framer-motion"
+import ImageComponent from "./ImageComponent"
+import { shops } from "@/constants/shop"
+import { likePost } from "@/lib/actions/LikePost"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { likedPostsState } from "../store/likedPostAtom"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 
 interface Product {
-  id: number;
-  brandname: string;
-  seoname: string;
-  shop: string;
-  image: string;
+  id: number
+  brandname: string
+  seoname: string
+  shop: string
+  image: string
 }
 
-interface PostProps {
-  id: number;
-  celebrityImages: string[];
-  celebrityDp: string;
-  celebrityName: string;
-  postDate: string;
-  products: Product[];
+export interface PostProps {
+  id: number
+  celebrityImages: string[]
+  celebrityDp: string
+  celebrityName: string
+  postDate: string
+  products: Product[]
 }
 
 export default function PostComponent({
@@ -39,74 +40,104 @@ export default function PostComponent({
   postDate,
   products,
 }: PostProps) {
-  const [likedPosts, setLikedPosts] = useRecoilState(likedPostsState);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isLiked, setIsLiked] = useState(likedPosts.some(post => post.id === id));
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
-  const { data: session } = useSession();
-  const { toast } = useToast();
+  const [likedPosts, setLikedPosts] = useRecoilState(likedPostsState)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isLiked, setIsLiked] = useState(likedPosts.some(post => post.id === id))
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { data: session } = useSession()
+  const { toast } = useToast()
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
-      const scrollAmount = direction === "left" ? -200 : 200;
+      const scrollAmount = direction === "left" ? -200 : 200
       scrollContainerRef.current.scrollBy({
         left: scrollAmount,
         behavior: "smooth",
-      });
+      })
     }
-  };
+  }
 
   const handleProductClick = (product: Product) => {
-    router.push(`/product/${product.id}`);
-  };
+    router.push(`/product/${product.id}`)
+  }
 
   const handleLike = async () => {
     if (!session) {
-      router.push('/api/auth/signin');
-      return;
+      router.push('/api/auth/signin')
+      return
     }
 
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
+    setIsLoading(true)
+    const newLikedState = !isLiked
+    setIsLiked(newLikedState)
 
     setLikedPosts(prev => 
       newLikedState
         ? [...prev, { id, celebrityImages, celebrityDp, celebrityName, postDate, products }]
         : prev.filter(post => post.id !== id)
-    );
+    )
 
     try {
-      const result = await likePost(id);
+      const result = await likePost(id)
       if (!result.success) {
-        throw new Error('Failed to update like status');
+        throw new Error('Failed to update like status')
       }
+      toast({
+        title: newLikedState ? "Post Liked" : "Post Unliked",
+        description: newLikedState ? "This post has been added to your likes." : "This post has been removed from your likes.",
+      })
     } catch (error) {
-      console.error('Failed to like post:', error);
-      setIsLiked(!newLikedState);
+      console.error('Failed to like post:', error)
+      setIsLiked(!newLikedState)
       setLikedPosts(prev => 
         newLikedState
           ? prev.filter(post => post.id !== id)
           : [...prev, { id, celebrityImages, celebrityDp, celebrityName, postDate, products }]
-      );
+      )
       toast({
         title: "Error",
         description: "Failed to update like status. Please try again.",
         variant: "destructive",
-      });
+      })
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
 
   const heartVariants = {
     liked: { scale: [1, 1.2, 1], transition: { duration: 0.3 } },
     unliked: { scale: [1, 0.8, 1], transition: { duration: 0.3 } }
-  };
+  }
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-on-scroll')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '50px'
+      }
+    )
+
+    const elements = document.querySelectorAll('.scroll-trigger')
+    elements.forEach(el => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4 border">
       {/* Desktop View */}
       <div className="hidden sm:flex h-[420px]">
-        <div className="w-1/2 relative">
+        <div className="w-1/2 relative scroll-trigger opacity-0">
           {celebrityImages.map((image, index) => (
             <div 
               key={index} 
@@ -114,18 +145,22 @@ export default function PostComponent({
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <ImageComponent
-                src={image}
-                alt={`${celebrityName} ${index + 1}`}
-                transformation={[{
-                  height: "680",
-                  width: "500",
-                  quality: "90",
-                  focus: "auto"
-                }]}
-                className="h-full w-full object-cover"
-                loading={index === 0 ? undefined : "lazy"}
-              />
+              {isLoading ? (
+                <Skeleton className="w-full h-full" />
+              ) : (
+                <ImageComponent
+                  src={image}
+                  alt={`${celebrityName} ${index + 1}`}
+                  transformation={[{
+                    height: "680",
+                    width: "500",
+                    quality: "90",
+                    focus: "auto"
+                  }]}
+                  className="h-full w-full object-cover"
+                  loading={index === 0 ? undefined : "lazy"}
+                />
+              )}
             </div>
           ))}
           <div
@@ -135,26 +170,30 @@ export default function PostComponent({
           />
         </div>
         <div className="w-1/2 flex flex-col h-full">
-          <div className="p-4 border-b border-gray-100">
+          <div className="p-4 border-b border-gray-100 scroll-trigger opacity-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center hover:cursor-pointer" onClick={() => router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
-                  <ImageComponent
-                    src={celebrityDp}
-                    alt={celebrityName}
-                    transformation={[{
-                      height: "100",
-                      width: "100",
-                      quality: "90",
-                      focus: "face",
-                      crop: "at_max"
-                    }]}
-                    className="object-cover w-full h-full"
-                  />
+                  {isLoading ? (
+                    <Skeleton className="w-full h-full rounded-full" />
+                  ) : (
+                    <ImageComponent
+                      src={celebrityDp}
+                      alt={celebrityName}
+                      transformation={[{
+                        height: "100",
+                        width: "100",
+                        quality: "90",
+                        focus: "face",
+                        crop: "at_max"
+                      }]}
+                      className="object-cover w-full h-full"
+                    />
+                  )}
                 </div>
                 <div>
-                  <h2 className="font-bold">{celebrityName}</h2>
-                  <p className="text-sm text-gray-500">{postDate}</p>
+                  <h2 className="font-bold">{isLoading ? <Skeleton className="h-4 w-24" /> : celebrityName}</h2>
+                  <p className="text-sm text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</p>
                 </div>
               </div>
               <AnimatePresence>
@@ -164,59 +203,77 @@ export default function PostComponent({
                   initial={false}
                   animate={isLiked ? "liked" : "unliked"}
                   variants={heartVariants}
+                  disabled={isLoading}
                 >
-                  <Heart
-                    className={`h-6 w-6 ${
-                      isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-                    }`}
-                  />
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                  ) : (
+                    <Heart
+                      className={`h-6 w-6 ${
+                        isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                      }`}
+                    />
+                  )}
                 </motion.button>
               </AnimatePresence>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-4 min-h-[500px]">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex items-center space-x-3 p-2 rounded-lg border-b mb-2 shadow-md hover:cursor-pointer"
-                onClick={() => handleProductClick(product)}
-              >
-                <ImageComponent
-                  src={product.image}
-                  alt={product.seoname}
-                  transformation={[{
-                    height: "200",
-                    width: "200", 
-                    quality: "80",
-                    focus: "auto",
-                    crop: "at_max",
-                    background: "white" 
-                  }]}
-                  className="rounded-md ml-2 w-[80px] h-[80px] object-cover"
-                />
-                <div className="flex-grow pl-6">
-                  <h3 className="font-bold">{product.brandname}</h3>
-                  <p className="text-sm text-gray-600">{product.seoname}</p>
-                  <div className="flex items-center">
-                    <p className="text-sm text-gray-600">shop from: </p>
-                    <Avatar className="ml-2">
-                      <AvatarImage
-                        src={shops.find((shop) => shop.name === product.shop)?.image}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-3">
+              {products.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer scroll-trigger opacity-0"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => handleProductClick(product)}
+                >
+                  <div className="w-[60px] h-[60px] relative flex-shrink-0">
+                    {isLoading ? (
+                      <Skeleton className="w-full h-full rounded-md" />
+                    ) : (
+                      <ImageComponent
+                        src={product.image}
+                        alt={product.seoname}
+                        transformation={[{
+                          height: "120",
+                          width: "120",
+                          quality: "90",
+                          focus: "auto",
+                          crop: "at_max",
+                          background: "white"
+                        }]}
+                        className="rounded-md absolute inset-0 w-full h-full object-contain"
                       />
-                      <AvatarFallback>{product.shop}</AvatarFallback>
-                    </Avatar>
+                    )}
                   </div>
+                  <div className="flex-grow pl-4">
+                    <h3 className="font-bold text-sm">{isLoading ? <Skeleton className="h-4 w-24" /> : product.brandname}</h3>
+                    <p className="text-xs  text-gray-600">{isLoading ? <Skeleton className="h-3 w-32" /> : product.seoname}</p>
+                    <div className="flex items-center mt-1">
+                      <p className="text-xs text-gray-600">shop from: </p>
+                      {isLoading ? (
+                        <Skeleton className="h-5 w-5 rounded-full ml-2" />
+                      ) : (
+                        <Avatar className="ml-2 h-5 w-5">
+                          <AvatarImage
+                            src={shops.find((shop) => shop.name === product.shop)?.image}
+                          />
+                          <AvatarFallback>{product.shop}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  </div>
+                  <HiArrowNarrowRight className="text-gray-400 flex-shrink-0 ml-2" />
                 </div>
-                <HiArrowNarrowRight className="text-gray-400" />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Mobile View */}
       <div className="sm:hidden">
-        <div className="relative w-full h-[calc(100vh-200px)]">
+        <div className="relative w-full h-[calc(100vh-200px)] scroll-trigger opacity-0">
           {celebrityImages.map((image, index) => (
             <div 
               key={index}
@@ -224,19 +281,23 @@ export default function PostComponent({
                 index === currentImageIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <ImageComponent
-                src={image}
-                alt={`${celebrityName} ${index + 1}`}
-                transformation={[{
-                  height: "800",
-                  width: "600",
-                  quality: "90",
-                  focus: "auto",
-                  crop: "at_max"
-                }]}
-                className="h-full w-full object-cover"
-                loading={index === 0 ? undefined : "lazy"}
-              />
+              {isLoading ? (
+                <Skeleton className="w-full h-full" />
+              ) : (
+                <ImageComponent
+                  src={image}
+                  alt={`${celebrityName} ${index + 1}`}
+                  transformation={[{
+                    height: "800",
+                    width: "600",
+                    quality: "90",
+                    focus: "auto",
+                    crop: "at_max"
+                  }]}
+                  className="h-full w-full object-cover"
+                  loading={index === 0 ? undefined : "lazy"}
+                />
+              )}
             </div>
           ))}
           <div
@@ -244,26 +305,30 @@ export default function PostComponent({
             onTouchStart={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
-          <div className="absolute bottom-0 left-0 right-0 top-[90%] p-4">
-            <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2">
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white">
-                  <ImageComponent
-                    src={celebrityDp}
-                    alt={celebrityName}
-                    transformation={[{
-                      height: "150",
-                      width: "150",
-                      quality: "90",
-                      focus: "face",
-                      crop: "at_max"
-                    }]}
-                    className="object-cover w-full h-full"
-                  />
+          <div className="absolute bottom-0 left-0 right-0 top-[88%] p-4 z-50">
+            <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-50">
+              <div className="flex items-center z-50">
+                <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white bg-gray-100">
+                  {isLoading ? (
+                    <Skeleton className="w-full h-full rounded-full" />
+                  ) : (
+                    <ImageComponent
+                      src={celebrityDp}
+                      alt={celebrityName}
+                      transformation={[{
+                        height: "150",
+                        width: "150",
+                        quality: "90",
+                        focus: "face",
+                        crop: "at_max"
+                      }]}
+                      className="object-cover w-full h-full"
+                    />
+                  )}
                 </div>
                 <div>
-                  <h2 className="font-bold text-sm">{celebrityName.split(" ")[0]}</h2>
-                  <p className="text-xs text-gray-500">{postDate}</p>
+                  <h2 className="font-bold text-sm">{isLoading ? <Skeleton className="h-4 w-24" /> : celebrityName.split(" ")[0]}</h2>
+                  <p className="text-xs text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</p>
                 </div>
               </div>
               <AnimatePresence>
@@ -273,18 +338,24 @@ export default function PostComponent({
                   initial={false}
                   animate={isLiked ? "liked" : "unliked"}
                   variants={heartVariants}
+                  disabled={isLoading}
                 >
-                  <Heart
-                    className={`h-6 w-6 ${
-                      isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-                    }`}
-                  />
+                  {isLoading ? (
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                  ) : (
+                    <Heart
+                      className={`h-6 w-6 ${
+                        isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                      }`}
+                    />
+                  )}
                 </motion.button>
               </AnimatePresence>
             </div>
           </div>
         </div>
-        <div className="p-4 bg-white mt-6 relative">
+
+        <div className="p-4 bg-white mt-6 relative scroll-trigger opacity-0">
           <div
             className="flex space-x-4 justify-between overflow-x-auto scrollbar-hide ml-4 mr-4"
             ref={scrollContainerRef}
@@ -295,29 +366,37 @@ export default function PostComponent({
                 className="flex-shrink-0 w-20"
                 onClick={() => handleProductClick(product)}
               >
-                <ImageComponent
-                  src={product.image}
-                  alt={product.seoname}
-                  transformation={[{
-                    height: "200",
-                    width: "200",
-                    quality: "80",
-                    focus: "auto",
-                    crop: "at_max"
-                  }]}
-                  className="rounded-md w-42 h-20 object-cover"
-                />
+                {isLoading ? (
+                  <Skeleton className="w-full h-20 rounded-md" />
+                ) : (
+                  <ImageComponent
+                    src={product.image}
+                    alt={product.seoname}
+                    transformation={[{
+                      height: "200",
+                      width: "200",
+                      quality: "80",
+                      focus: "auto",
+                      crop: "at_max"
+                    }]}
+                    className="rounded-md w-42 h-20 object-cover"
+                  />
+                )}
                 <p className="mt-2 font-semibold text-xs truncate">
-                  {product.brandname}
+                  {isLoading ? <Skeleton className="h-3 w-16" /> : product.brandname}
                 </p>
                 <div className="flex items-center">
                   <p className="text-sm text-gray-600">shop:</p>
-                  <Avatar className="ml-2">
-                    <AvatarImage
-                      src={shops.find((shop) => shop.name === product.shop)?.image}
-                    />
-                    <AvatarFallback>{product.shop}</AvatarFallback>
-                  </Avatar>
+                  {isLoading ? (
+                    <Skeleton className="h-5 w-5 rounded-full ml-2" />
+                  ) : (
+                    <Avatar className="ml-2">
+                      <AvatarImage
+                        src={shops.find((shop) => shop.name === product.shop)?.image}
+                      />
+                      <AvatarFallback>{product.shop}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
               </div>
             ))}
@@ -336,6 +415,29 @@ export default function PostComponent({
           </button>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes slideUp {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+            clip-path: inset(100% 0 0 0);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+            clip-path: inset(0 0 0 0);
+          }
+        }
+
+        .animate-on-scroll {
+          animation: slideUp 0.6s ease-out forwards;
+        }
+
+        .scroll-trigger {
+          will-change: transform, opacity, clip-path;
+        }
+      `}</style>
     </div>
-  );
+  )
 }

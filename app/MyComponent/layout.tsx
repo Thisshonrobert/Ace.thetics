@@ -13,7 +13,7 @@ export default function Layout({ children}:PropsWithChildren) {
       
       <Navbar
         toggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}
-        toggleRightSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+        // toggleLeftSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
       />
       
       <main className="flex-1 ">
