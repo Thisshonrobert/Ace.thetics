@@ -80,6 +80,8 @@ export default function ImageComponent({
   }
 
   const imagePath = getImageKitPath(src);
+  console.log('ImageComponent props:', { src, alt, width, height, className, transformation, lqip, loading, fill });
+  console.log('Processed image path:', imagePath);
 
   // If dimensions are provided in transformation, use those instead
   const hasTransformDimensions = transformation.some(t => t.height || t.width);

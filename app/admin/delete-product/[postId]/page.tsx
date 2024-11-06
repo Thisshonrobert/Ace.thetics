@@ -6,7 +6,8 @@ import { deleteProductFromPost } from '@/lib/actions/DeletePostandProduct'
 import { useSession } from 'next-auth/react'
 import ImageComponent from '@/app/MyComponent/ImageComponent'
 import { Skeleton } from "@/components/ui/skeleton"
-
+import { AlertDialog, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 interface Product {
   id: number
   brandname: string
@@ -27,29 +28,30 @@ export default function DeleteProductPage({ params }: { params: { postId: string
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const { data: session, status } = useSession();
+  const { data: session, status } = useSession()
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading") return
     if (!session || session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
-      router.push('/');
+      router.push('/')
     }
-  }, [session, status, router]);
+  }, [session, status, router])
 
   useEffect(() => {
     async function fetchPost() {
       setIsLoading(true)
+      setError(null)
       try {
         const response = await fetch(`/api/posts/${params.postId}`)
         if (!response.ok) {
-          throw new Error('Failed to fetch post')
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
         console.log('Fetched post data:', data)
         setPost(data)
       } catch (err) {
-        setError('Failed to load post')
-        console.error(err)
+        console.error('Error fetching post:', err)
+        setError('Failed to load post. Please try again later.')
       } finally {
         setIsLoading(false)
       }
@@ -73,78 +75,80 @@ export default function DeleteProductPage({ params }: { params: { postId: string
           throw new Error(result.message)
         }
       } catch (err) {
-        setError('Failed to remove product from post')
-        console.error(err)
+        console.error('Error removing product:', err)
+        setError('Failed to remove product from post. Please try again.')
       } finally {
         setIsLoading(false)
       }
     }
   }
 
-  if (error) return <div className="text-center mt-8 text-red-500">{error}</div>
-  if (!post && !isLoading) return <div className="text-center mt-8">Post not found</div>
+  if (error) {
+    return (
+      <AlertDialog >
+        <AlertDialogTitle>Error</AlertDialogTitle>
+        <AlertDialogDescription>{error}</AlertDialogDescription>
+      </AlertDialog>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Manage Products for Post</h1>
       {isLoading ? (
-        <Skeleton className="h-8 w-64 mb-4" />
-      ) : (
-        <h2 className="text-xl mb-4">Celebrity: {post?.Celebrity.name}</h2>
-      )}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(3)].map((_, index) => (
-            <div key={index} className="bg-white p-4 rounded-lg shadow">
-              <Skeleton className="w-full h-48 mb-4" />
-              <Skeleton className="h-6 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2 mb-4" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ))}
+        <div className="flex items-center justify-center">
+          <AiOutlineLoading3Quarters className="mr-2 h-4 w-4 animate-spin" />
+          Loading...
         </div>
-      ) : post?.products.length === 0 ? (
-        <p>No products found for this post.</p>
+      ) : !post ? (
+        <div className="text-center mt-8">Post not found</div>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {post?.products.map((product) => (
-            <li key={product.id} className="bg-white p-4 rounded-lg shadow">
-              <div className="w-full h-48 mb-4">
-                {product.imageUrl && !isLoading ? (
-                  <ImageComponent
-                    src={product.imageUrl}
-                    alt={product.seoname}
-                    width={500}
-                    height={500}
-                    className="rounded-md w-full h-full object-contain"
-                    transformation={[{
-                      height: "200",
-                      width: "200",
-                      quality: "80",
-                      focus: "auto",
-                      crop: "at_max"
-                    }]}
-                    lqip={{ active: true, quality: 10, blur: 10 }}
-                    loading="lazy"
-                   
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                    <span className="text-gray-500">No image</span>
+        <>
+          <h2 className="text-xl mb-4">Celebrity: {post.Celebrity.name}</h2>
+          {post.products.length === 0 ? (
+            <p>No products found for this post.</p>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {post.products.map((product) => (
+                <li key={product.id} className="bg-white p-4 rounded-lg shadow">
+                  <div className=" absolute w-48 h-48 mb-4 ">
+                    {product.imageUrl ? (
+                      <ImageComponent
+                        src={product.imageUrl}
+                        alt={product.seoname}
+                        width={30}
+                        height={30}
+                        className="rounded-md w-50 h-50 object-contain"
+                        transformation={[{
+                          height: "200",
+                          width: "200",
+                          quality: "80",
+                          focus: "auto",
+                          crop: "at_max"
+                        }]}
+                        lqip={{ active: true, quality: 10, blur: 10 }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                        <span className="text-gray-500">No image</span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <h3 className="font-semibold">{product.brandname}</h3>
-              <p className="text-sm text-gray-500 mb-4">{product.seoname}</p>
-              <button
-                onClick={() => handleDeleteProduct(product.id)}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors w-full"
-              >
-                Remove Product
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <h3 className="font-semibold ml-20">{product.brandname}</h3>
+                  <p className="text-sm text-gray-500 mb-4 mt-4">{product.seoname}</p>
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Removing...' : 'Remove Product'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )
