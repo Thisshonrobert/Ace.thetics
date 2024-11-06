@@ -17,7 +17,7 @@ interface ImageComponentProps {
   height?: number;
   className?: string;
   transformation?: Partial<TransformationObject>[];
-  lqip?: { active: boolean; quality?: number };
+  lqip?: { active: boolean; quality?: number;blur?:number };
   loading?: "lazy" | undefined;
   fill?: boolean;
 }
@@ -70,7 +70,7 @@ export default function ImageComponent({
   height,
   className,
   transformation = [],
-  lqip = { active: true, quality: 20 },
+  lqip = { active: true, quality: 20,blur:10 },
   loading,
   fill = false,
 }: ImageComponentProps) {

@@ -159,6 +159,7 @@ export default function PostComponent({
                   }]}
                   className="h-full w-full object-cover"
                   loading={index === 0 ? undefined : "lazy"}
+                  lqip={{ active: true, quality: 10,blur:10 }}
                 />
               )}
             </div>
@@ -220,30 +221,35 @@ export default function PostComponent({
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
-              {products.map((product, index) => (
+            {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer scroll-trigger opacity-0"
                   style={{ animationDelay: `${index * 0.1}s` }}
                   onClick={() => handleProductClick(product)}
                 >
-                  <div className="w-[60px] h-[60px] relative flex-shrink-0">
+                  <div className="w-[100px] h-[100px] bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
                     {isLoading ? (
                       <Skeleton className="w-full h-full rounded-md" />
                     ) : (
-                      <ImageComponent
-                        src={product.image}
-                        alt={product.seoname}
-                        transformation={[{
-                          height: "120",
-                          width: "120",
-                          quality: "90",
-                          focus: "auto",
-                          crop: "at_max",
-                          background: "white"
-                        }]}
-                        className="rounded-md absolute inset-0 w-full h-full object-contain"
-                      />
+                      <div className="w-full h-full relative">
+                        <ImageComponent
+                          src={product.image}
+                          alt={product.seoname}
+                          width={100}
+                          height={100}
+                          className="w-full h-full"
+                          transformation={[{
+                            width: "200",
+                            height: "200",
+                            quality: "90",
+                            
+                            background: "FFFFFF"
+                          }]}
+                          lqip={{ active: true, quality: 10, blur: 10 }}
+                          loading="lazy"
+                        />
+                      </div>
                     )}
                   </div>
                   <div className="flex-grow pl-4">
@@ -254,7 +260,7 @@ export default function PostComponent({
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-5 w-5">
+                        <Avatar className="ml-2 h-8 w-8 mt-2">
                           <AvatarImage
                             src={shops.find((shop) => shop.name === product.shop)?.image}
                           />
@@ -296,6 +302,7 @@ export default function PostComponent({
                   }]}
                   className="h-full w-full object-cover"
                   loading={index === 0 ? undefined : "lazy"}
+                  lqip={{ active: true, quality: 10,blur:10 }}
                 />
               )}
             </div>
@@ -305,7 +312,7 @@ export default function PostComponent({
             onTouchStart={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
-          <div className="absolute bottom-0 left-0 right-0 top-[88%] p-4 z-50">
+          <div className="absolute bottom-0 left-0 right-0 top-[80%] p-4 z-50">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-50">
               <div className="flex items-center z-50">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white bg-gray-100">
@@ -380,6 +387,7 @@ export default function PostComponent({
                       crop: "at_max"
                     }]}
                     className="rounded-md w-42 h-20 object-cover"
+                    lqip={{ active: true, quality: 10,blur:10 }}
                   />
                 )}
                 <p className="mt-2 font-semibold text-xs truncate">

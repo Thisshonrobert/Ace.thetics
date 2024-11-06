@@ -3,7 +3,7 @@ import Post from "./MyComponent/Post"
 import { GetPosts } from "@/lib/actions/GetPosts"
 
 export const metadata: Metadata = {
-  title: 'Home | Your Fashion Inspiration',
+  title: 'Acethetics | Your Fashion Inspiration',
   description: 'Discover the latest fashion trends and celebrity styles',
   openGraph: {
     title: 'Home | Your Fashion Inspiration',
