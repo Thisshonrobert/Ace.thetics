@@ -1,11 +1,21 @@
 'use client'
 
-import { useRecoilValue } from 'recoil';
+import { useEffect } from 'react';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import PostComponent from '../MyComponent/Post';
-import { likedPostsSelector } from '../store/likedPostAtom';
+import { likedPostsSelector, likedPostsState, LikedPost } from '../store/likedPostAtom';
 
-export  function LikedPageClient() {
+interface LikedPageClientProps {
+  initialLikedPosts: LikedPost[];
+}
+
+export function LikedPageClient({ initialLikedPosts }: LikedPageClientProps) {
   const likedPosts = useRecoilValue(likedPostsSelector);
+  const setLikedPosts = useSetRecoilState(likedPostsState);
+
+  useEffect(() => {
+    setLikedPosts(initialLikedPosts);
+  }, [initialLikedPosts, setLikedPosts]);
 
   return (
     <div className="container mx-auto px-4 py-8">

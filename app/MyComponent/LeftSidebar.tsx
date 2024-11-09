@@ -3,14 +3,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Heart, List, Settings, ShoppingBag, Star, Tag } from "lucide-react";
+import { Heart, List, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { HiArrowNarrowRight } from "react-icons/hi";
-import { GiMale } from "react-icons/gi";
-import { IoIosFemale } from "react-icons/io";
 import { FaBabyCarriage } from "react-icons/fa";
+import { GiMale } from "react-icons/gi";
+import { HiArrowNarrowRight } from "react-icons/hi";
+import { IoIosFemale } from "react-icons/io";
 
 import {
   DropdownMenu,

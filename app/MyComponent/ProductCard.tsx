@@ -10,6 +10,7 @@ interface ProductCardProps {
   alt: string
   seoname: string
   description: string
+  category: string
   link: string
   isWishlisted: boolean
   onWishlistToggle: () => void
@@ -20,6 +21,7 @@ export default function ProductCard({
   alt, 
   seoname, 
   description, 
+  category, 
   link, 
   isWishlisted,
   onWishlistToggle 

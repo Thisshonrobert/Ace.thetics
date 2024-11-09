@@ -193,6 +193,7 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
           image={product.imageUrl}
           alt={product.brandname}
           seoname={product.seoname}
+          category={product.category}
           description={product.description}
           link={product.link}
           isWishlisted={isWishlisted}

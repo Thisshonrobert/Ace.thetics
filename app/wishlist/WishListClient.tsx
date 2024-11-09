@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toggleWishlist } from '@/lib/actions/Wishlist'
 import ProductCard from '../MyComponent/ProductCard'
+import { useRecoilValue, useSetRecoilState } from 'recoil'
+import { wishlistSelector, wishlistState } from '../store/wishlistAtom'
 
 interface Product {
   id: number
@@ -16,11 +18,19 @@ interface Product {
 }
 
 interface WishlistClientProps {
-  initialWishlist: Product[]
+  initialWishlist: Product[];
 }
 
 export default function WishlistClient({ initialWishlist }: WishlistClientProps) {
-  const [wishlist, setWishlist] = useState<Product[]>(initialWishlist)
+  const wishlist = useRecoilValue(wishlistSelector);
+  const setWishlist = useSetRecoilState(wishlistState);
+  
+  useEffect(() => {
+    if (wishlist.length > 0) {
+      setWishlist(initialWishlist);
+      
+    }
+  }, [wishlist, setWishlist]);
 
   const handleToggleWishlist = async (productId: number) => {
     try {
@@ -44,6 +54,7 @@ export default function WishlistClient({ initialWishlist }: WishlistClientProps)
             alt={product.seoname}
             seoname={product.seoname}
             description={product.description}
+            category = {product.category}
             link={product.link}
             isWishlisted={true}
             onWishlistToggle={() => handleToggleWishlist(product.id)}

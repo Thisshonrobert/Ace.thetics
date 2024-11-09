@@ -1,5 +1,5 @@
 import { atom, selector } from 'recoil';
-import { GetAllLikedPosts } from '@/lib/actions/LikePost';
+
 
 export interface LikedPost {
   id: number;
@@ -16,6 +16,8 @@ export interface LikedPost {
   }[];
 }
 
+// Atom to store the fetched state
+
 export const likedPostsState = atom<LikedPost[]>({
   key: 'likedPostsState',
   default: [],
@@ -23,17 +25,7 @@ export const likedPostsState = atom<LikedPost[]>({
 
 export const likedPostsSelector = selector({
   key: 'likedPostsSelector',
-  get: async ({ get }) => {
-    const likedPosts = get(likedPostsState);
-    if (likedPosts.length === 0) {
-      try {
-        const fetchedLikedPosts = await GetAllLikedPosts();
-        return fetchedLikedPosts;
-      } catch (error) {
-        console.error('Failed to fetch liked posts:', error);
-        return [];
-      }
-    }
-    return likedPosts;
+  get: ({ get }) => {
+    return get(likedPostsState);
   },
 });

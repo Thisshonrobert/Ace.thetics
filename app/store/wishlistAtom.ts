@@ -1,35 +1,26 @@
-import { GetAllWishlistedProduct } from '@/lib/actions/Wishlist'
-import { atom, selector } from 'recoil'
+import { atom, selector } from 'recoil';
+import { GetAllWishlistedProduct } from '@/lib/actions/Wishlist';
 
-export interface Product {
-  id: number
-  brandname: string
-  seoname: string
-  category: string
-  shop: string
-  description: string
-  link: string
-  imageUrl: string
+export interface WishlistProduct {
+  id: number;
+  brandname: string;
+  seoname: string;
+  category: string 
+  shop: string;
+  imageUrl: string;
+  description: string;
+  link: string;
 }
 
-export const wishlistState = atom<Product[]>({
+export const wishlistState = atom<WishlistProduct[]>({
   key: 'wishlistState',
   default: [],
-})
+});
 
 export const wishlistSelector = selector({
-  key: 'wishlistStateSelector',
+  key: 'wishlistSelector',
   get: async ({ get }) => {
-    const wishlist = get(wishlistState)
-    if (wishlist.length === 0) {
-      try {
-        const fetchedWishlistProducts = await GetAllWishlistedProduct()
-        return fetchedWishlistProducts
-      } catch (error) {
-        console.error('Failed to fetch wishlisted products:', error)
-        return []
-      }
-    }
-    return wishlist
+    return get(wishlistState);
+    
   },
-})
+});

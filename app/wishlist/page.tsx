@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 }
 
 export default async function WishlistPage() {
-  const wishlistedProducts = await GetAllWishlistedProduct()
+  const initialWishlist = await GetAllWishlistedProduct();
 
   return (
     <div className="mt-[35%] md:mt-[15%] lg:mt-[9%]">
-      <WishListClient initialWishlist={wishlistedProducts} />
+      <WishListClient initialWishlist={initialWishlist} />
     </div>
   )
 }

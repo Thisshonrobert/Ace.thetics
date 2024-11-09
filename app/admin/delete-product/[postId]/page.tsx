@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import ImageComponent from '@/app/MyComponent/ImageComponent'
+import { AlertDialog, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { deleteProductFromPost } from '@/lib/actions/DeletePostandProduct'
 import { useSession } from 'next-auth/react'
-import ImageComponent from '@/app/MyComponent/ImageComponent'
-import { Skeleton } from "@/components/ui/skeleton"
-import { AlertDialog, AlertDialogDescription, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { AiOutlineLoading3Quarters } from "react-icons/ai"
 interface Product {
   id: number
   brandname: string

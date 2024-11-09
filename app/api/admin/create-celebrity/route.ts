@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 
+// Add this interface before the POST function
+interface ProductInput {
+  brandName: string;
+  seoName: string;
+  category: string;
+  shop: string;
+  link: string;
+  imageUrl: string;
+  description?: string;
+}
 
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) {
@@ -47,7 +57,7 @@ export async function POST(req: NextRequest) {
         celebrityId: celebrity.id,
         imageUrl: celebImages,
         products: {
-          create: products.map((product: any) => ({
+          create: products.map((product: ProductInput) => ({
             Product: {
               create: {
                 brandname: product.brandName,

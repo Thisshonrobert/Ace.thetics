@@ -1,19 +1,19 @@
 "use client"
 
 import { PropsWithChildren, useState } from "react"
-import Navbar from "./NavBar"
 import LeftSidebar from "./LeftSidebar"
+import Navbar from "./NavBar"
 
 export default function Layout({ children}:PropsWithChildren) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(false)
+ 
 
   return (
     <div className="min-h-screen flex flex-col">
       
       <Navbar
         toggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}
-        // toggleLeftSidebar={() => setRightSidebarOpen(!rightSidebarOpen)}
+     
       />
       
       <main className="flex-1 ">

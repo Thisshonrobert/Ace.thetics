@@ -33,7 +33,7 @@ export default function DpComponent({ post }: DpComponentProps) {
           <ImageComponent
             src={post.celebrityDp}
             alt={post.celebrityName}
-            className="w-full h-full object-cover"
+            className="w-full h-full  object-top"
             transformation={[{
               width: "1200",
               height: "800",
@@ -42,7 +42,7 @@ export default function DpComponent({ post }: DpComponentProps) {
             }]}
             lqip={{ active: true, quality: 80 }}
             loading="lazy"
-            fill={true}
+            
           />
         </div>
         <div className="absolute inset-0 bg-black bg-opacity-30" />

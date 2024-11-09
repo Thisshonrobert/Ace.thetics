@@ -28,6 +28,12 @@ interface Product {
   image: File | null;
 }
 
+interface ImageKitAuthResponse {
+  token: string;
+  expire: number;
+  signature: string;
+}
+
 export default function AdminPageClient() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -61,9 +67,9 @@ export default function AdminPageClient() {
     }
   }, [session, status, router]);
 
-  const authenticator = async () => {
+  const authenticator = async (): Promise<ImageKitAuthResponse> => {
     try {
-      const { data } = await axios.get("/api/imagekit-auth");
+      const { data } = await axios.get<ImageKitAuthResponse>("/api/imagekit-auth");
       return data;
     } catch (error) {
       console.error("Authentication request failed:", error);
@@ -121,104 +127,103 @@ export default function AdminPageClient() {
     }
   };
 
- 
-const uploadImage = async (files: File[], folder: string) => {
-  try {
-    const formData = new FormData();
-    
-    // Append all files with the same field name
-    files.forEach(file => {
-      formData.append("file", file);
-    });
-    formData.append("folder", folder);
-
-    console.log(`Uploading ${files.length} files to folder: ${folder}`);
-
-    const response = await axios.post("/api/imagekit-upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    console.log('Upload response:', response.data);
-    // If it's a single file upload, return the first URL
-    if (files.length === 1) {
-      return response.data[0].url;
-    }
-    // For multiple files, return array of URLs
-    return response.data.map((result: any) => result.url);
-  } catch (error) {
-    console.error("Error uploading images:", error);
-    toast.error("Failed to upload images");
-    throw new Error("Image upload failed");
-  }
-};
-
-const handlePost = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
-  try {
-    console.log('Starting post process');
-    
-    // Upload profile picture if exists
-    let dpImageUrl = "";
-    if (formData.dpImage) {
-      dpImageUrl = await uploadImage([formData.dpImage], "/dp");
-    }
-
-    // Upload celebrity images
-    let celebImageUrls: string[] = [];
-    if (formData.celebImages.length > 0) {
-      celebImageUrls = await uploadImage(formData.celebImages, "/celebrities");
-    }
-
-    // Upload product images
-    const productImageUrls = await Promise.all(
-      formData.products.map(async (product) => {
-        if (!product.image) throw new Error("Product image is required");
-        const imageUrl = await uploadImage([product.image], "/products");
-        return { ...product, imageUrl };
-      })
-    );
-
-    const payload = {
-      name: formData.celebName,
-      celebImages: celebImageUrls,
-      products: productImageUrls.map((product) => ({
-        brandName: product.brandName,
-        seoName: product.seoName,
-        category: product.category,
-        shop: product.shop,
-        link: product.link,
-        description: product.description,
-        imageUrl: product.imageUrl,
-      })),
-      ...(formData.celebExists ? {} : {
-        socialId: formData.socialId,
-        gender: formData.gender as Gender,
-        dpImage: dpImageUrl,
-      }),
-    };
-
-    console.log('Sending payload:', payload);
-    const response = await axios.post('/api/admin/create-celebrity', payload);
-
-    if (response.status === 200 || response.status === 201) {
-      toast.success(formData.celebExists ? 'Celebrity updated successfully!' : 'Celebrity and products added successfully!');
-      setFormData({
-        gender: "",
-        celebName: "",
-        socialId: "",
-        celebImages: [],
-        dpImage: null,
-        celebExists: false,
-        products: [],
+  const uploadImage = async (files: File[], folder: string) => {
+    try {
+      const formData = new FormData();
+      
+      // Append all files with the same field name
+      files.forEach(file => {
+        formData.append("file", file);
       });
+      formData.append("folder", folder);
+
+      console.log(`Uploading ${files.length} files to folder: ${folder}`);
+
+      const response = await axios.post("/api/imagekit-upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log('Upload response:', response.data);
+      // If it's a single file upload, return the first URL
+      if (files.length === 1) {
+        return response.data[0].url;
+      }
+      // For multiple files, return array of URLs
+      return response.data.map((result: any) => result.url);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
+      throw new Error("Image upload failed");
     }
-  } catch (error) {
-    console.error('Error posting celebrity:', error);
-    toast.error('Failed to add/update celebrity and products. Please try again.');
-  }
-  setIsLoading(false);
-};
+  };
+
+  const handlePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      console.log('Starting post process');
+      
+      // Upload profile picture if exists
+      let dpImageUrl = "";
+      if (formData.dpImage) {
+        dpImageUrl = await uploadImage([formData.dpImage], "/dp");
+      }
+
+      // Upload celebrity images
+      let celebImageUrls: string[] = [];
+      if (formData.celebImages.length > 0) {
+        celebImageUrls = await uploadImage(formData.celebImages, "/celebrities");
+      }
+
+      // Upload product images
+      const productImageUrls = await Promise.all(
+        formData.products.map(async (product) => {
+          if (!product.image) throw new Error("Product image is required");
+          const imageUrl = await uploadImage([product.image], "/products");
+          return { ...product, imageUrl };
+        })
+      );
+
+      const payload = {
+        name: formData.celebName,
+        celebImages: celebImageUrls,
+        products: productImageUrls.map((product) => ({
+          brandName: product.brandName,
+          seoName: product.seoName,
+          category: product.category,
+          shop: product.shop,
+          link: product.link,
+          description: product.description,
+          imageUrl: product.imageUrl,
+        })),
+        ...(formData.celebExists ? {} : {
+          socialId: formData.socialId,
+          gender: formData.gender as Gender,
+          dpImage: dpImageUrl,
+        }),
+      };
+
+      console.log('Sending payload:', payload);
+      const response = await axios.post('/api/admin/create-celebrity', payload);
+
+      if (response.status === 200 || response.status === 201) {
+        toast.success(formData.celebExists ? 'Celebrity updated successfully!' : 'Celebrity and products added successfully!');
+        setFormData({
+          gender: "",
+          celebName: "",
+          socialId: "",
+          celebImages: [],
+          dpImage: null,
+          celebExists: false,
+          products: [],
+        });
+      }
+    } catch (error) {
+      console.error('Error posting celebrity:', error);
+      toast.error('Failed to add/update celebrity and products. Please try again.');
+    }
+    setIsLoading(false);
+  };
 
   return (
     <ImageKitProvider 

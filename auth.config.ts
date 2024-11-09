@@ -12,6 +12,7 @@ export default {
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET!,
+  trustHost: true,
   callbacks: {
     authorized: async ({ auth }) => {
       return !!auth

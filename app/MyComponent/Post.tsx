@@ -32,6 +32,18 @@ export interface PostProps {
   products: Product[]
 }
 
+// Add this sorting function at the top of the component
+const sortProducts = (products: Product[]) => {
+  return [...products].sort((a, b) => {
+    // First sort by shop name
+    const shopComparison = a.shop.localeCompare(b.shop);
+    if (shopComparison !== 0) return shopComparison;
+    
+    // Then by brand name
+    return a.brandname.localeCompare(b.brandname);
+  });
+};
+
 export default function PostComponent({
   id,
   celebrityImages,
@@ -48,6 +60,9 @@ export default function PostComponent({
   const { data: session } = useSession()
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Sort products before rendering
+  const sortedProducts = sortProducts(products);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -221,29 +236,29 @@ export default function PostComponent({
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
-            {products.map((product, index) => (
+              {sortedProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer scroll-trigger opacity-0"
                   style={{ animationDelay: `${index * 0.1}s` }}
                   onClick={() => handleProductClick(product)}
                 >
-                  <div className="w-[100px] h-[100px] bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
+                  <div className="w-[100px] h-[100px] bg-white rounded-md overflow-hidden flex-shrink-0">
                     {isLoading ? (
                       <Skeleton className="w-full h-full rounded-md" />
                     ) : (
-                      <div className="w-full h-full relative">
+                      <div className="w-full h-full relative bg-white flex items-center justify-center p-1">
                         <ImageComponent
                           src={product.image}
                           alt={product.seoname}
-                          width={100}
-                          height={100}
-                          className="w-full h-full"
+                          width={200}
+                          height={200}
+                          className="w-auto h-auto max-w-full max-h-full object-contain"
                           transformation={[{
                             width: "200",
                             height: "200",
                             quality: "90",
-                            
+                            crop: "at_max",
                             background: "FFFFFF"
                           }]}
                           lqip={{ active: true, quality: 10, blur: 10 }}
@@ -312,7 +327,7 @@ export default function PostComponent({
             onTouchStart={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
-          <div className="absolute bottom-0 left-0 right-0 top-[80%] p-4 z-50">
+          <div className="absolute bottom-0 left-0 right-0 top-[86%] p-4 z-50">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-50">
               <div className="flex items-center z-50">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white bg-gray-100">
@@ -362,34 +377,39 @@ export default function PostComponent({
           </div>
         </div>
 
-        <div className="p-4 bg-white mt-6 relative scroll-trigger opacity-0">
+        <div className="p-4 bg-white mt-2 relative scroll-trigger opacity-0">
           <div
             className="flex space-x-4 justify-between overflow-x-auto scrollbar-hide ml-4 mr-4"
             ref={scrollContainerRef}
           >
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <div
                 key={product.id}
-                className="flex-shrink-0 w-20"
+                className="flex-shrink-0 w-24"
                 onClick={() => handleProductClick(product)}
               >
-                {isLoading ? (
-                  <Skeleton className="w-full h-20 rounded-md" />
-                ) : (
-                  <ImageComponent
-                    src={product.image}
-                    alt={product.seoname}
-                    transformation={[{
-                      height: "200",
-                      width: "200",
-                      quality: "80",
-                      focus: "auto",
-                      crop: "at_max"
-                    }]}
-                    className="rounded-md w-42 h-20 object-cover"
-                    lqip={{ active: true, quality: 10,blur:10 }}
-                  />
-                )}
+                <div className="w-24 h-24 bg-white rounded-md flex items-center justify-center p-1">
+                  {isLoading ? (
+                    <Skeleton className="w-full h-full rounded-md" />
+                  ) : (
+                    <ImageComponent
+                      src={product.image}
+                      alt={product.seoname}
+                      width={80}
+                      height={80}
+                      className="w-auto h-auto max-w-full max-h-full object-contain"
+                      transformation={[{
+                        width: "160",
+                        height: "160",
+                        quality: "80",
+                        crop: "at_max",
+                        background: "FFFFFF"
+                      }]}
+                      lqip={{ active: true, quality: 10, blur: 10 }}
+                      loading="lazy"
+                    />
+                  )}
+                </div>
                 <p className="mt-2 font-semibold text-xs truncate">
                   {isLoading ? <Skeleton className="h-3 w-16" /> : product.brandname}
                 </p>

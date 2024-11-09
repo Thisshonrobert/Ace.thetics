@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { LikedPageClient } from "./LikedPageClient"
+import { GetAllLikedPosts } from '@/lib/actions/LikePost';
 
 export const metadata: Metadata = {
   title: 'Liked Posts',
@@ -11,10 +12,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default function LikedPage() {
+export default async function LikedPage() {
+  const initialLikedPosts = await GetAllLikedPosts();
   return (
     <div className="mt-[35%] md:mt-[15%] lg:mt-[7%]">
-      <LikedPageClient />
+      <LikedPageClient initialLikedPosts={initialLikedPosts} />
     </div>
   )
 }
