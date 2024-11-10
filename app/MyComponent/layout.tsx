@@ -4,6 +4,7 @@ import { PropsWithChildren, useState } from "react"
 import LeftSidebar from "./LeftSidebar"
 import Navbar from "./NavBar"
 
+
 export default function Layout({ children}:PropsWithChildren) {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(false)
  
@@ -15,6 +16,8 @@ export default function Layout({ children}:PropsWithChildren) {
         toggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)}
      
       />
+      
+      
       
       <main className="flex-1 ">
         {children}

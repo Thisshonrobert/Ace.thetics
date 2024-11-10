@@ -29,24 +29,25 @@ export default function ProductCard({
   return (
     <div className="w-full max-w-sm mx-auto">
       <BackgroundGradient className="rounded-[22px] p-1">
-        <div className="rounded-[20px] p-4 sm:p-6 bg-white dark:bg-zinc-900 overflow-hidden">
-          <div className="aspect-square relative w-full overflow-hidden rounded-lg">
-            <ImageComponent
-              src={image}
-              alt={alt}
-              width={300}
-              height={320}
-              className="w-full h-full object-cover"
-              transformation={[{
-                width: "800",
-                height: "800",
-                quality: "80",
-                crop: "at_max",
-                focus: "auto"
-              }]}
-              lqip={{ active: true, quality: 20 }}
-              loading="lazy"
-            />
+        <div className="rounded-[20px] p-4 sm:p-6 bg-white dark:bg-zinc-900">
+          <div className="relative aspect-square w-full rounded-lg overflow-hidden">
+            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              <ImageComponent
+                src={image}
+                alt={alt}
+                className="w-full h-full object-contain"
+                transformation={[{
+                  width: "800",
+                  height: "800",
+                  quality: "80",
+                  crop: "maintain_ratio",
+                  focus: "auto",
+                  background: "FFFFFF"
+                }]}
+                lqip={{ active: true, quality: 20 }}
+                loading="lazy"
+              />
+            </div>
           </div>
           <h3 className="text-semibold sm:text-xl font-poppins text-black mt-4 mb-2 dark:text-neutral-200 line-clamp-2">
             {seoname}

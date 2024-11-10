@@ -110,7 +110,7 @@ export default function ImageComponent({
           alt={alt}
           width={finalWidth}
           height={finalHeight}
-          className={`${fill ? 'object-cover w-full h-full' : ''}`}
+          className={`${fill ? 'object-cover w-full h-full' : ''} ${className || ''}`}
           transformation={processedTransformation}
           lqip={lqip}
           loading={loading}

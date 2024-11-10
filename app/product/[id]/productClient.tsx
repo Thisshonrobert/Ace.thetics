@@ -47,29 +47,35 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title, isLoadi
         >
           {isLoading
             ? Array(5).fill(0).map((_, index) => (
-                <div key={index} className="flex-shrink-0 w-32 ml-4 mr-4">
-                  <Skeleton className="w-full h-32 rounded-md" />
+                <div key={index} className="flex-shrink-0 w-24 ml-4 mr-4">
+                  <div className="w-24 h-24 bg-gray-100 rounded-md">
+                    <Skeleton className="w-full h-full rounded-md" />
+                  </div>
                   <Skeleton className="h-4 w-full mt-1" />
                   <Skeleton className="h-3 w-3/4 mt-1" />
                 </div>
               ))
             : items.map((item) => (
-                <Link href={`/product/${item.id}`} key={item.id} className="flex-shrink-0 w-32 ml-4 mr-4">
-                  <ImageComponent
-                    src={item.imageUrl}
-                    alt={item.seoname}
-                    width={128}
-                    height={128}
-                    className="w-full h-32 object-cover rounded-md"
-                    transformation={[{
-                      width: "128",
-                      height: "128",
-                      quality: "80",
-                      crop: "at_max",
-                      focus: "auto"
-                    }]}
-                  />
-                  <h3 className="mt-1 text-xs font-medium truncate">{item.seoname}</h3>
+                <Link href={`/product/${item.id}`} key={item.id} className="flex-shrink-0 w-24 ml-4 mr-4">
+                  <div className="w-30 h-30 bg-white rounded-md flex items-center justify-center p-1">
+                    <ImageComponent
+                      src={item.imageUrl}
+                      alt={item.seoname}
+                      width={100}
+                      height={100}
+                      className="w-auto h-auto max-w-full max-h-full object-contain"
+                      transformation={[{
+                        width: "160",
+                        height: "160",
+                        quality: "80",
+                        crop: "at_max",
+                        background: "FFFFFF"
+                      }]}
+                      lqip={{ active: true, quality: 10, blur: 10 }}
+                      loading="lazy"
+                    />
+                  </div>
+                  <h3 className="mt-2 text-xs font-medium truncate">{item.seoname}</h3>
                   <p className="text-xs text-gray-500 truncate">{item.brandname}</p>
                 </Link>
               ))

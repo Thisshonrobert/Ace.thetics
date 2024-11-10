@@ -44,7 +44,7 @@ export default async function GetCelebrity(name: string) {
             celebrityImages: post.imageUrl,
             celebrityName: post.Celebrity.name,
             celebrityDp: post.Celebrity.dp,
-            celebritySocialMedia:post.Celebrity.socialmediaId,
+            celebritySocialMedia: post.Celebrity.socialmediaId,
             postDate: post.date.toDateString(),
             products: post.products.map(pp => ({
                 id: pp.Product.id,

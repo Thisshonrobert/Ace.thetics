@@ -15,6 +15,7 @@ import { likedPostsState } from "../store/likedPostAtom"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 
+
 interface Product {
   id: number
   brandname: string
@@ -32,14 +33,10 @@ export interface PostProps {
   products: Product[]
 }
 
-// Add this sorting function at the top of the component
 const sortProducts = (products: Product[]) => {
   return [...products].sort((a, b) => {
-    // First sort by shop name
     const shopComparison = a.shop.localeCompare(b.shop);
     if (shopComparison !== 0) return shopComparison;
-    
-    // Then by brand name
     return a.brandname.localeCompare(b.brandname);
   });
 };
@@ -55,14 +52,32 @@ export default function PostComponent({
   const [likedPosts, setLikedPosts] = useRecoilState(likedPostsState)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLiked, setIsLiked] = useState(likedPosts.some(post => post.id === id))
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
   const router = useRouter()
   const { data: session } = useSession()
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
-  // Sort products before rendering
   const sortedProducts = sortProducts(products);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 1000) // Simulate loading time
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        setImagesLoaded(true)
+      }, 500) // Delay image reveal for smooth transition
+
+      return () => clearTimeout(timer)
+    }
+  }, [isLoading])
 
   const scroll = (direction: "left" | "right") => {
     if (scrollContainerRef.current) {
@@ -126,44 +141,21 @@ export default function PostComponent({
     unliked: { scale: [1, 0.8, 1], transition: { duration: 0.3 } }
   }
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('animate-on-scroll')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '50px'
-      }
-    )
-
-    const elements = document.querySelectorAll('.scroll-trigger')
-    elements.forEach(el => observer.observe(el))
-
-    return () => observer.disconnect()
-  }, [])
-
   return (
     <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4 border">
       {/* Desktop View */}
+    
       <div className="hidden sm:flex h-[420px]">
-        <div className="w-1/2 relative scroll-trigger opacity-0">
+        <div className="w-1/2 relative">
           {celebrityImages.map((image, index) => (
-            <div 
+            <motion.div 
               key={index} 
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                index === currentImageIndex ? "opacity-100" : "opacity-0"
-              }`}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: index === currentImageIndex && imagesLoaded ? 1 : 0 }}
+              transition={{ duration: 0.5 }}
             >
-              {isLoading ? (
-                <Skeleton className="w-full h-full" />
-              ) : (
-                <ImageComponent
+            <ImageComponent
                   src={image}
                   alt={`${celebrityName} ${index + 1}`}
                   transformation={[{
@@ -172,13 +164,16 @@ export default function PostComponent({
                     quality: "90",
                     focus: "auto"
                   }]}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-top"
                   loading={index === 0 ? undefined : "lazy"}
                   lqip={{ active: true, quality: 10,blur:10 }}
-                />
-              )}
-            </div>
+                  
+                />  
+            </motion.div>
           ))}
+          {isLoading && (
+            <Skeleton className="absolute inset-0" />
+          )}
           <div
             className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity duration-300 cursor-pointer"
             onMouseEnter={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
@@ -186,7 +181,7 @@ export default function PostComponent({
           />
         </div>
         <div className="w-1/2 flex flex-col h-full">
-          <div className="p-4 border-b border-gray-100 scroll-trigger opacity-0">
+          <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center hover:cursor-pointer" onClick={() => router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)}>
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2">
@@ -209,7 +204,7 @@ export default function PostComponent({
                 </div>
                 <div>
                   <h2 className="font-bold">{isLoading ? <Skeleton className="h-4 w-24" /> : celebrityName}</h2>
-                  <p className="text-sm text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</p>
+                  <div className="text-sm text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</div>
                 </div>
               </div>
               <AnimatePresence>
@@ -237,11 +232,13 @@ export default function PostComponent({
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-3">
               {sortedProducts.map((product, index) => (
-                <div
+                <motion.div
                   key={product.id}
-                  className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer scroll-trigger opacity-0"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer"
                   onClick={() => handleProductClick(product)}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: imagesLoaded ? 1 : 0, y: imagesLoaded ? 0 : 20 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <div className="w-[100px] h-[100px] bg-white rounded-md overflow-hidden flex-shrink-0">
                     {isLoading ? (
@@ -269,13 +266,13 @@ export default function PostComponent({
                   </div>
                   <div className="flex-grow pl-4">
                     <h3 className="font-bold text-sm">{isLoading ? <Skeleton className="h-4 w-24" /> : product.brandname}</h3>
-                    <p className="text-xs  text-gray-600">{isLoading ? <Skeleton className="h-3 w-32" /> : product.seoname}</p>
+                    <div className="text-xs  text-gray-600">{isLoading ? <Skeleton className="h-3 w-32" /> : product.seoname}</div>
                     <div className="flex items-center mt-1">
-                      <p className="text-xs text-gray-600">shop from: </p>
+                      <div className="text-xs text-gray-600">shop from: </div>
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-8 w-8 mt-2">
+                        <Avatar className="ml-2 h-8 w-8 mt-4">
                           <AvatarImage
                             src={shops.find((shop) => shop.name === product.shop)?.image}
                           />
@@ -285,7 +282,7 @@ export default function PostComponent({
                     </div>
                   </div>
                   <HiArrowNarrowRight className="text-gray-400 flex-shrink-0 ml-2" />
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -294,34 +291,34 @@ export default function PostComponent({
 
       {/* Mobile View */}
       <div className="sm:hidden">
-        <div className="relative w-full h-[calc(100vh-200px)] scroll-trigger opacity-0">
+        <div className="relative w-full h-[calc(100vh-200px)]">
           {celebrityImages.map((image, index) => (
-            <div 
+            <motion.div 
               key={index}
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                index === currentImageIndex ? "opacity-100" : "opacity-0"
-              }`}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: index === currentImageIndex && imagesLoaded ? 1 : 0 }}
+              transition={{ duration: 0.5 }}
             >
-              {isLoading ? (
-                <Skeleton className="w-full h-full" />
-              ) : (
-                <ImageComponent
-                  src={image}
-                  alt={`${celebrityName} ${index + 1}`}
-                  transformation={[{
-                    height: "800",
-                    width: "600",
-                    quality: "90",
-                    focus: "auto",
-                    crop: "at_max"
-                  }]}
-                  className="h-full w-full object-cover"
-                  loading={index === 0 ? undefined : "lazy"}
-                  lqip={{ active: true, quality: 10,blur:10 }}
-                />
-              )}
-            </div>
+              <ImageComponent
+                src={image}
+                alt={`${celebrityName} ${index + 1}`}
+                transformation={[{
+                  height: "800",
+                  width: "600",
+                  quality: "90",
+                  focus: "auto",
+                  crop: "at_max"
+                }]}
+                className="h-full w-full object-cover"
+                loading={index === 0 ? undefined : "lazy"}
+                lqip={{ active: true, quality: 10, blur: 10 }}
+              />
+            </motion.div>
           ))}
+          {isLoading && (
+            <Skeleton className="absolute inset-0" />
+          )}
           <div
             className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-opacity duration-300"
             onTouchStart={() => setCurrentImageIndex((prev) => (prev + 1) % celebrityImages.length)}
@@ -377,7 +374,12 @@ export default function PostComponent({
           </div>
         </div>
 
-        <div className="p-4 bg-white mt-2 relative scroll-trigger opacity-0">
+        <motion.div 
+          className="p-4 bg-white mt-2 relative"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: imagesLoaded ? 1 : 0, y: imagesLoaded ? 0 : 20 }}
+          transition={{ duration: 0.5 }}
+        >
           <div
             className="flex space-x-4 justify-between overflow-x-auto scrollbar-hide ml-4 mr-4"
             ref={scrollContainerRef}
@@ -410,11 +412,11 @@ export default function PostComponent({
                     />
                   )}
                 </div>
-                <p className="mt-2 font-semibold text-xs truncate">
+                <div  className="mt-2 font-semibold text-xs truncate">
                   {isLoading ? <Skeleton className="h-3 w-16" /> : product.brandname}
-                </p>
+                </div>
                 <div className="flex items-center">
-                  <p className="text-sm text-gray-600">shop:</p>
+                  <div className="text-sm text-gray-600">shop:</div>
                   {isLoading ? (
                     <Skeleton className="h-5 w-5 rounded-full ml-2" />
                   ) : (
@@ -441,31 +443,8 @@ export default function PostComponent({
           >
             <ChevronRight className="h-5 w-5" />
           </button>
-        </div>
+        </motion.div>
       </div>
-
-      <style jsx global>{`
-        @keyframes slideUp {
-          0% {
-            opacity: 0;
-            transform: translateY(20px);
-            clip-path: inset(100% 0 0 0);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-            clip-path: inset(0 0 0 0);
-          }
-        }
-
-        .animate-on-scroll {
-          animation: slideUp 0.6s ease-out forwards;
-        }
-
-        .scroll-trigger {
-          will-change: transform, opacity, clip-path;
-        }
-      `}</style>
     </div>
   )
 }
