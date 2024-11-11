@@ -33,7 +33,7 @@ export default function CelebrityClient({ initialPosts }: CelebrityClientProps) 
       
        
       {initialPosts.length > 0 && <DpComponent post={initialPosts[0]} />}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {initialPosts.length > 0 ? (
           initialPosts.map((post) => (
             <Post
