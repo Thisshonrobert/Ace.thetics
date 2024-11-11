@@ -32,22 +32,23 @@ export default function ProductCard({
       <BackgroundGradient className="rounded-[22px] p-1">
         <div className="rounded-[20px] p-4 sm:p-6 bg-white dark:bg-zinc-900">
           <div className="relative aspect-square w-full rounded-lg overflow-hidden">
-            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+            <div className="w-full h-full relative bg-white flex items-center justify-center p-1">
               <ImageComponent
                 src={image}
                 alt={alt}
+                width={1200}
+                height={1200}
                 className="w-auto h-auto max-w-full max-h-full object-contain"
                 transformation={[
                   {
-                    width: "800",
-                    height: "800",
-                    quality: "80",
-                    crop: "maintain_ratio",
-                    focus: "auto",
-                    background: "FFFFFF",
+                    width: "1200",
+                    height: "1200",
+                    quality: "90",
+                    crop: "at_max",
+                    background: "FFFFFF"
                   },
                 ]}
-                lqip={{ active: true, quality: 20 }}
+                lqip={{ active: true, quality: 20, blur: 10 }}
                 loading="lazy"
               />
             </div>

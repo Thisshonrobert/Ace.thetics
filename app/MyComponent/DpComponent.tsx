@@ -27,27 +27,30 @@ interface DpComponentProps {
 
 export default function DpComponent({ post }: DpComponentProps) {
   return (
-    <div className="w-56 sm:w-full max-w-3xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden mt-4">
-      <div className="relative h-56 sm:h-80">
-        <div className="relative w-full h-full">
+    <div className="w-full max-w-xl mx-auto bg-white shadow-lg rounded-md overflow-hidden mt-4">
+      <div className="relative aspect-square">
+        <div className="w-full h-full relative bg-white flex items-center justify-center p-1">
           <ImageComponent
             src={post.celebrityDp}
             alt={post.celebrityName}
-            className="w-full h-full object-top"
+            width={800}
+            height={800}
+            className="w-auto h-auto max-w-full max-h-full object-contain rounded-md"
             transformation={[{
-              width: "1200",
+              width: "800",
               height: "800",
               quality: "90",
               crop: "at_max",
+              background: "FFFFFF",
               focus: "auto"
             }]}
-            lqip={{ active: true, quality: 80 }}
+            lqip={{ active: true, quality: 80, blur: 10 }}
             loading="lazy"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-md" />
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">{post.celebrityName}</h1>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white">{post.celebrityName}</h1>
           <a
             href={`https://${post.celebritySocialMedia}`}
             target="_blank"
