@@ -26,24 +26,42 @@ export async function deletePost(postId: number) {
     await prisma.$disconnect()
   }
 }
-
-
-export async function deleteProductFromPost(postId: number, productId: number) {
-    try {
-      await prisma.postProduct.deleteMany({
+export async function deleteProductFromPost(postId: number, productId: number, deleteOrphanedProduct: boolean = false) {
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      // Remove the association between the post and the product
+      await tx.postProduct.deleteMany({
         where: {
           AND: [
             { postId: postId },
             { productId: productId }
           ]
         }
-      })
-  
-      return { success: true, message: 'Product removed from post successfully' }
-    } catch (error) {
-      console.error('Error removing product from post:', error)
-      return { success: false, message: 'Failed to remove product from post' }
-    } finally {
-      await prisma.$disconnect()
-    }
+      });
+
+      if (deleteOrphanedProduct) {
+        // Check if the product is associated with any other posts
+        const productAssociations = await tx.postProduct.findMany({
+          where: { productId: productId }
+        });
+
+        // If the product is not associated with any other posts, delete it
+        if (productAssociations.length === 0) {
+          await tx.product.delete({
+            where: { id: productId }
+          });
+          return { success: true, message: 'Product removed from post and deleted successfully' };
+        }
+      }
+
+      return { success: true, message: 'Product removed from post successfully' };
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Error removing product from post:', error);
+    return { success: false, message: 'Failed to remove product from post' };
+  } finally {
+    await prisma.$disconnect();
   }
+}

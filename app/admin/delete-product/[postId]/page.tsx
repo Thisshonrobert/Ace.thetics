@@ -63,7 +63,7 @@ export default function DeleteProductPage({ params }: { params: { postId: string
     if (window.confirm('Are you sure you want to remove this product from the post?')) {
       setIsLoading(true)
       try {
-        const result = await deleteProductFromPost(parseInt(params.postId), productId)
+        const result = await deleteProductFromPost(parseInt(params.postId), productId,true)
         if (result.success) {
           setPost(prevPost => prevPost ? {
             ...prevPost,

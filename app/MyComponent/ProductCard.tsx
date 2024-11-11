@@ -1,30 +1,31 @@
-'use client'
+"use client";
 
-import { BackgroundGradient } from '@/components/ui/background-gradient'
-import { CiViewList } from "react-icons/ci"
-import { IoBagOutline } from "react-icons/io5"
-import ImageComponent from './ImageComponent'
+import { BackgroundGradient } from "@/components/ui/background-gradient";
+import { CiViewList } from "react-icons/ci";
+import { IoBagOutline } from "react-icons/io5";
+import ImageComponent from "./ImageComponent";
+import { Button } from "@/components/ui/button";
 
 interface ProductCardProps {
-  image: string
-  alt: string
-  seoname: string
-  description: string
-  category: string
-  link: string
-  isWishlisted: boolean
-  onWishlistToggle: () => void
+  image: string;
+  alt: string;
+  seoname: string;
+  description: string;
+  category: string;
+  link: string;
+  isWishlisted: boolean;
+  onWishlistToggle: () => void;
 }
 
-export default function ProductCard({ 
-  image, 
-  alt, 
-  seoname, 
-  description, 
-  category, 
-  link, 
+export default function ProductCard({
+  image,
+  alt,
+  seoname,
+  description,
+  category,
+  link,
   isWishlisted,
-  onWishlistToggle 
+  onWishlistToggle,
 }: ProductCardProps) {
   return (
     <div className="w-full max-w-sm mx-auto">
@@ -35,15 +36,17 @@ export default function ProductCard({
               <ImageComponent
                 src={image}
                 alt={alt}
-                className="w-full h-full object-contain"
-                transformation={[{
-                  width: "800",
-                  height: "800",
-                  quality: "80",
-                  crop: "maintain_ratio",
-                  focus: "auto",
-                  background: "FFFFFF"
-                }]}
+                className="w-auto h-auto max-w-full max-h-full object-contain"
+                transformation={[
+                  {
+                    width: "800",
+                    height: "800",
+                    quality: "80",
+                    crop: "maintain_ratio",
+                    focus: "auto",
+                    background: "FFFFFF",
+                  },
+                ]}
                 lqip={{ active: true, quality: 20 }}
                 loading="lazy"
               />
@@ -56,27 +59,36 @@ export default function ProductCard({
             {description}
           </p>
           <div className="flex justify-between mt-4 gap-2">
-            <a 
-              href={`https://${link}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
+            <Button
+              variant="gooeyLeft"
               className="flex-1 rounded-full px-4 py-2 text-white flex items-center justify-center space-x-2 bg-black text-xs font-bold dark:bg-zinc-800 hover:opacity-90 transition-opacity"
             >
-              <span>Buy now</span>
-              <IoBagOutline className="ml-2" />
-            </a>
-            <button
+              <a
+                href={`https://${link}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex"
+              >
+                <span>Buy now</span>
+                <IoBagOutline className="ml-2" />
+              </a>
+            </Button>
+
+            <Button
+              variant="gooeyRight"
               onClick={onWishlistToggle}
               className={`flex-1 rounded-full px-4 py-2 text-white flex items-center justify-center space-x-2 ${
-                isWishlisted ? 'bg-red-500 hover:bg-red-600' : 'bg-black hover:bg-black/90'
+                isWishlisted
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-black hover:bg-black/90"
               } text-xs font-bold dark:bg-zinc-800 transition-colors`}
             >
-              <span>{isWishlisted ? 'Remove' : 'Wishlist'}</span>
+              <span>{isWishlisted ? "Remove" : "Wishlist"}</span>
               <CiViewList className="ml-2" />
-            </button>
+            </Button>
           </div>
         </div>
       </BackgroundGradient>
     </div>
-  )
+  );
 }
