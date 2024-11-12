@@ -272,7 +272,7 @@ export default function PostComponent({
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-8 w-8 mt-4">
+                        <Avatar className="ml-2 h-8 w-8 mt-3">
                           <AvatarImage
                             src={shops.find((shop) => shop.name === product.shop)?.image}
                           />

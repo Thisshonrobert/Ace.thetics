@@ -35,7 +35,7 @@ export default function CelebrityClient({ initialPosts }: CelebrityClientProps) 
       {initialPosts.length > 0 && <DpComponent post={initialPosts[0]} />}
       <div className="space-y-3">
         {initialPosts.length > 0 ? (
-          initialPosts.map((post) => (
+          initialPosts.map((post, index) => (
             <Post
               key={post.id}
               celebrityImages={post.celebrityImages}
