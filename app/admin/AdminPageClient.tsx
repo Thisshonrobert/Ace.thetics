@@ -62,10 +62,13 @@ export default function AdminPageClient() {
 
   useEffect(() => {
     if (status === "loading") return;
-    if (!session || session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
+  
+    // Redirect if the user is not logged in or the email is not one of the allowed admin emails
+    if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL && session.user?.email !== process.env.NEXT_PUBLIC_ADMIN1_EMAIL)) {
       router.push('/');
     }
   }, [session, status, router]);
+  
 
   const authenticator = async (): Promise<ImageKitAuthResponse> => {
     try {
