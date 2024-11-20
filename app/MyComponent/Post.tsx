@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react"
 import { useRecoilState } from 'recoil'
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react"
+import { ChevronLeft, ChevronRight, Heart, Share } from "lucide-react"
 import { HiArrowNarrowRight } from "react-icons/hi"
 import { motion, AnimatePresence } from "framer-motion"
 import ImageComponent from "./ImageComponent"
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { likedPostsState } from "../store/likedPostAtom"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
+import ShareDialog from "./ShareDialog"
 
 
 interface Product {
@@ -58,6 +59,7 @@ export default function PostComponent({
   const { data: session } = useSession()
   const { toast } = useToast()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false)
 
   const sortedProducts = sortProducts(products);
 
@@ -207,26 +209,39 @@ export default function PostComponent({
                   <div className="text-sm text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</div>
                 </div>
               </div>
-              <AnimatePresence>
-                <motion.button
-                  onClick={handleLike}
+              <div className="flex items-center space-x-2">
+                <AnimatePresence>
+                  <motion.button
+                    onClick={handleLike}
+                    className="focus:outline-none"
+                    initial={false}
+                    animate={isLiked ? "liked" : "unliked"}
+                    variants={heartVariants}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Skeleton className="h-6 w-6 rounded-full" />
+                    ) : (
+                      <Heart
+                        className={`h-6 w-6 ${
+                          isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                        }`}
+                      />
+                    )}
+                  </motion.button>
+                </AnimatePresence>
+                <button
+                  onClick={() => setIsShareDialogOpen(true)}
                   className="focus:outline-none"
-                  initial={false}
-                  animate={isLiked ? "liked" : "unliked"}
-                  variants={heartVariants}
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <Skeleton className="h-6 w-6 rounded-full" />
                   ) : (
-                    <Heart
-                      className={`h-6 w-6 ${
-                        isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-                      }`}
-                    />
+                    <Share className="h-6 w-6 text-gray-400 hover:text-gray-600" />
                   )}
-                </motion.button>
-              </AnimatePresence>
+                </button>
+              </div>
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
@@ -272,7 +287,7 @@ export default function PostComponent({
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-8 w-8 mt-3">
+                        <Avatar className="ml-2 h-8 w-8 mt-2">
                           <AvatarImage
                             src={shops.find((shop) => shop.name === product.shop)?.image}
                           />
@@ -350,26 +365,39 @@ export default function PostComponent({
                   <p className="text-xs text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</p>
                 </div>
               </div>
-              <AnimatePresence>
-                <motion.button
-                  onClick={handleLike}
+              <div className="flex items-center space-x-2">
+                <AnimatePresence>
+                  <motion.button
+                    onClick={handleLike}
+                    className="focus:outline-none"
+                    initial={false}
+                    animate={isLiked ? "liked" : "unliked"}
+                    variants={heartVariants}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Skeleton className="h-6 w-6 rounded-full" />
+                    ) : (
+                      <Heart
+                        className={`h-6 w-6 ${
+                          isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
+                        }`}
+                      />
+                    )}
+                  </motion.button>
+                </AnimatePresence>
+                <button
+                  onClick={() => setIsShareDialogOpen(true)}
                   className="focus:outline-none"
-                  initial={false}
-                  animate={isLiked ? "liked" : "unliked"}
-                  variants={heartVariants}
                   disabled={isLoading}
                 >
                   {isLoading ? (
                     <Skeleton className="h-6 w-6 rounded-full" />
                   ) : (
-                    <Heart
-                      className={`h-6 w-6 ${
-                        isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-                      }`}
-                    />
+                    <Share className="h-6 w-6 text-gray-400 hover:text-gray-600" />
                   )}
-                </motion.button>
-              </AnimatePresence>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -445,6 +473,13 @@ export default function PostComponent({
           </button>
         </motion.div>
       </div>
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        postId={id}
+        imageUrl={celebrityImages[0]}
+        title={`Check out ${celebrityName}'s style`}
+      />
     </div>
   )
 }
