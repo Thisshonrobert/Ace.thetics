@@ -18,6 +18,9 @@ export default async function WishlistPage() {
   return (
     <div className="mt-[35%] md:mt-[15%] lg:mt-[9%]">
       <WishListClient initialWishlist={initialWishlist} />
+      {initialWishlist.length === 0 && (
+        <div className="text-center text-gray-500">No products found.</div>
+      )}
     </div>
   )
 }

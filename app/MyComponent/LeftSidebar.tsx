@@ -24,7 +24,7 @@ import {
 const menuItems = [
   { icon: GiMale, label: "Men", route: "/filter/men" },
   { icon: IoIosFemale, label: "Women", route: "/filter/women" },
-  { icon: FaBabyCarriage, label: "Kids", route: "/filter/kids" },
+ 
   { icon: Heart, label: "Liked", route: "/liked", requiresAuth: true },
   { icon: List, label: "Wishlist", route: "/wishlist", requiresAuth: true },
 ];

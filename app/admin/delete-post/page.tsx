@@ -79,7 +79,7 @@ export default function DeletePostPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Delete Post</h1>
       {posts.length === 0 ? (
-        <p>No posts found.</p>
+        <div>No posts found.</div>
       ) : (
         <ul className="space-y-4">
           {posts.map((post) => (
@@ -87,7 +87,7 @@ export default function DeletePostPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="font-semibold">{post.Celebrity.name}</h2>
-                  <p className="text-sm text-gray-500">{new Date(post.date).toLocaleDateString()}</p>
+                  <div className="text-sm text-gray-500">{new Date(post.date).toLocaleDateString()}</div>
                 </div>
                 <div className="flex space-x-2">
                   <Link href={`/admin/delete-product/${post.id}`}>

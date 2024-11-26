@@ -362,7 +362,7 @@ export default function PostComponent({
                 </div>
                 <div>
                   <h2 className="font-bold text-sm">{isLoading ? <Skeleton className="h-4 w-24" /> : celebrityName.split(" ")[0]}</h2>
-                  <p className="text-xs text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</p>
+                  <div className="text-xs text-gray-500">{isLoading ? <Skeleton className="h-3 w-16" /> : postDate}</div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -440,8 +440,10 @@ export default function PostComponent({
                     />
                   )}
                 </div>
-                <div  className="mt-2 font-semibold text-xs truncate">
-                  {isLoading ? <Skeleton className="h-3 w-16" /> : product.brandname}
+                <div>
+                  <div className="mt-2 font-semibold text-xs truncate">
+                    {isLoading ? <Skeleton className="h-3 w-16" /> : product.brandname}
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <div className="text-sm text-gray-600">shop:</div>
