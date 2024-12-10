@@ -57,7 +57,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 className="rounded-md"
               />
               <div className="text-center mt-2">
-                <h1 className="block text-sm font-semibold">Ace.Thetics</h1>
+                <h1 className="block text-md font-semibold font-signature"><span className=" text-md font-bold font-Dancing">Ace.</span>Thetics</h1>
                 <p className="block text-xs text-slate-500">Livi'n Style</p>
               </div>
             </div>

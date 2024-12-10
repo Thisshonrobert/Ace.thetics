@@ -4,10 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { ImageKitProvider } from "imagekitio-next";
 import { toast } from 'react-toastify';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 const urlEndpoint = process.env.NEXT_PUBLIC_URL_ENDPOINT;
 const publicKey = process.env.NEXT_PUBLIC_PUBLIC_KEY;
@@ -17,6 +20,21 @@ enum Gender {
   Women = 'women',
   Kids = 'kids',
 }
+
+export enum Profession {
+  Actor = 'actor',
+  Actress = 'actress',
+  Artist = 'artist',
+  Sports = 'sports',
+  Other = 'other',
+}
+
+export const topCountries = [
+  "United States", "China", "India", "Brazil", "Russia", "United Kingdom", "France", "Germany", 
+  "Japan", "Canada", "South Korea", "Italy", "Australia", "Spain", "Mexico", "Indonesia", 
+  "Netherlands", "Saudi Arabia", "Turkey", "Switzerland", "Sweden", "Poland", "Belgium", 
+  "Norway", "Argentina"
+];
 
 interface Product {
   brandName: string;
@@ -34,6 +52,21 @@ interface ImageKitAuthResponse {
   signature: string;
 }
 
+const initialCategories = [
+  "shirt", "pant", "suits", "t-shirts", "jeans", "trousers", "chinos",
+  "blazers", "jackets", "ethnic wear", "activewear", "shorts",
+  "footwear", "eyewear", "accessories", "skirt", "tops", "blouses",
+  "skirts",  "leggings", "sarees"
+];
+
+const sanitizeUrl = (url: string) => {
+  // Remove any existing protocol (http:// or https://)
+  let cleanUrl = url.replace(/^(https?:\/\/)+(www\.)?/, '');
+  console.log(cleanUrl);
+  // Add https:// only if it's not already there
+  return cleanUrl;
+}
+
 export default function AdminPageClient() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -46,6 +79,8 @@ export default function AdminPageClient() {
     dpImage: null as File | null,
     celebExists: false,
     products: [] as Product[],
+    profession: "",
+    country: "",
   });
 
   const [currentProduct, setCurrentProduct] = useState<Product>({
@@ -59,17 +94,19 @@ export default function AdminPageClient() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [isAddingCategory, setIsAddingCategory] = useState<boolean>(false);
+  
 
   useEffect(() => {
     if (status === "loading") return;
   
-    // Redirect if the user is not logged in or the email is not one of the allowed admin emails
     if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL && session.user?.email !== process.env.NEXT_PUBLIC_ADMIN1_EMAIL)) {
       router.push('/');
     }
   }, [session, status, router]);
   
-
   const authenticator = async (): Promise<ImageKitAuthResponse> => {
     try {
       const { data } = await axios.get<ImageKitAuthResponse>("/api/imagekit-auth");
@@ -83,7 +120,12 @@ export default function AdminPageClient() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'socialId') {
+      const sanitizedValue = sanitizeUrl(value);
+      setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'dpImage' | 'celebImages') => {
@@ -92,10 +134,9 @@ export default function AdminPageClient() {
       if (field === 'dpImage') {
         setFormData(prev => ({ ...prev, [field]: files[0] }));
       } else {
-        setFormData(prev => ({ ...prev, [field]:[...prev.celebImages, ...Array.from(files)]}));
+        setFormData(prev => ({ ...prev, [field]: [...prev.celebImages, ...Array.from(files)] }));
       }
     }
-    console.log(`${field} updated:`, files);
   };
 
   const handleCheck = async () => {
@@ -124,7 +165,6 @@ export default function AdminPageClient() {
         image: null,
       });
       toast.success('Product added successfully');
-      console.log('Product added:', currentProduct);
     } else {
       toast.error('Please upload a product image');
     }
@@ -134,24 +174,18 @@ export default function AdminPageClient() {
     try {
       const formData = new FormData();
       
-      // Append all files with the same field name
       files.forEach(file => {
         formData.append("file", file);
       });
       formData.append("folder", folder);
 
-      console.log(`Uploading ${files.length} files to folder: ${folder}`);
-
       const response = await axios.post("/api/imagekit-upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      console.log('Upload response:', response.data);
-      // If it's a single file upload, return the first URL
       if (files.length === 1) {
         return response.data[0].url;
       }
-      // For multiple files, return array of URLs
       return response.data.map((result: any) => result.url);
     } catch (error) {
       console.error("Error uploading images:", error);
@@ -164,21 +198,16 @@ export default function AdminPageClient() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      console.log('Starting post process');
-      
-      // Upload profile picture if exists
       let dpImageUrl = "";
       if (formData.dpImage) {
         dpImageUrl = await uploadImage([formData.dpImage], "/dp");
       }
 
-      // Upload celebrity images
       let celebImageUrls: string[] = [];
       if (formData.celebImages.length > 0) {
         celebImageUrls = await uploadImage(formData.celebImages, "/celebrities");
       }
 
-      // Upload product images
       const productImageUrls = await Promise.all(
         formData.products.map(async (product) => {
           if (!product.image) throw new Error("Product image is required");
@@ -189,13 +218,13 @@ export default function AdminPageClient() {
 
       const payload = {
         name: formData.celebName,
-        celebImages: celebImageUrls,
+        celebImages: [celebImageUrls],
         products: productImageUrls.map((product) => ({
           brandName: product.brandName,
           seoName: product.seoName,
           category: product.category,
           shop: product.shop,
-          link: product.link,
+          link: sanitizeUrl(product.link),
           description: product.description,
           imageUrl: product.imageUrl,
         })),
@@ -203,10 +232,11 @@ export default function AdminPageClient() {
           socialId: formData.socialId,
           gender: formData.gender as Gender,
           dpImage: dpImageUrl,
+          profession: formData.profession as Profession,
+          country: formData.country,
         }),
       };
 
-      console.log('Sending payload:', payload);
       const response = await axios.post('/api/admin/create-celebrity', payload);
 
       if (response.status === 200 || response.status === 201) {
@@ -219,6 +249,8 @@ export default function AdminPageClient() {
           dpImage: null,
           celebExists: false,
           products: [],
+          profession: "",
+          country: "",
         });
       }
     } catch (error) {
@@ -228,140 +260,250 @@ export default function AdminPageClient() {
     setIsLoading(false);
   };
 
+  const handleAddCategory = () => {
+    if (newCategory && !categories.includes(newCategory.toLowerCase())) {
+      setCategories(prev => [...prev, newCategory.toLowerCase()]);
+      setNewCategory('');
+      setIsAddingCategory(false);
+    }
+  };
+
   return (
     <ImageKitProvider 
       publicKey={publicKey!} 
       urlEndpoint={urlEndpoint!} 
       authenticator={authenticator}
     >
-      <form onSubmit={handlePost} className='max-w-xl flex flex-col items-center justify-center mx-auto space-y-3 mt-[10%]'>
-        <h1 className="text-2xl font-bold mb-4">Admin Page</h1>
-        
-        <Input 
-          name="celebName"
-          onChange={handleInputChange} 
-          value={formData.celebName} 
-          placeholder='Celebrity name' 
-          required
-        />
-        <Button type="button" onClick={handleCheck} disabled={isLoading}>
-          {isLoading ? 'Checking...' : 'Check Celebrity'}
-        </Button>
-        
-        {!formData.celebExists && (
-          <>
-            <Input 
-              name="socialId"
-              onChange={handleInputChange} 
-              value={formData.socialId} 
-              placeholder='Social ID' 
-              required
-            />
-            <label className="font-semibold">Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleInputChange}
-              className="w-full p-2 border rounded"
-              required
-            >
-              <option value="">Select Gender</option>
-              {Object.values(Gender).map((g) => (
-                <option key={g} value={g}>
-                  {g.charAt(0).toUpperCase() + g.slice(1)}
-                </option>
-              ))}
-            </select>
-            <label className="font-semibold">Celebrity Profile Picture</label>
-            <input
-              type="file"
-              onChange={(e) => handleFileChange(e, 'dpImage')}
-              accept="image/*"
-              className="w-full p-2 border rounded"
-              required
-            />
-          </>
-        )}
-        
-        <label className="font-semibold">Celebrity Post Images (Multiple)</label>
-        <input
-          type="file"
-          onChange={(e) => handleFileChange(e, 'celebImages')}
-          accept="image/*"
-          multiple
-          className="w-full p-2 border rounded"
-          required
-        />
-        {formData.celebImages.length > 0 && (
-          <div>
-            <h3 className="font-semibold">Selected Images:</h3>
-            <ul>
-              {formData.celebImages.map((file, index) => (
-                <li key={index}>{file.name}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
-        <h2 className="text-xl font-bold mt-8">Add Products</h2>
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
-          value={currentProduct.brandName} 
-          placeholder='Brand name' 
-        />
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} 
-          value={currentProduct.description} 
-          placeholder='Description' 
-        />
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
-          value={currentProduct.seoName} 
-          placeholder='SEO name' 
-        />
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })} 
-          value={currentProduct.category} 
-          placeholder='Category' 
-        />
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
-          value={currentProduct.shop} 
-          placeholder='Shop' 
-        />
-        <Input 
-          onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
-          value={currentProduct.link} 
-          placeholder='Link' 
-        />
-        <label className="font-semibold">Product Image</label>
-        <input
-          type="file"
-          onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.files?.[0] || null })}
-          accept="image/*"
-          className="w-full p-2 border rounded"
-        />
-        <Button type="button" onClick={handleAddProduct}>Add Product</Button>
+      <Card className="max-w-2xl mx-auto mt-8">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Admin Page</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePost} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="celebName">Celebrity Name</Label>
+              <Input 
+                id="celebName"
+                name="celebName"
+                onChange={handleInputChange} 
+                value={formData.celebName} 
+                placeholder="Celebrity name" 
+                required
+              />
+            </div>
+            <Button type="button" onClick={handleCheck} disabled={isLoading}>
+              {isLoading ? 'Checking...' : 'Check Celebrity'}
+            </Button>
+            
+            {!formData.celebExists && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="socialId">Social ID</Label>
+                  <Input 
+                    id="socialId"
+                    name="socialId"
+                    onChange={handleInputChange} 
+                    value={formData.socialId} 
+                    placeholder="Social ID" 
+                    required
+                  />
+                  {formData.socialId && (
+                    <p className="text-xs text-gray-500">
+                      Sanitized URL: {formData.socialId}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select name="gender" onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(Gender).map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {g.charAt(0).toUpperCase() + g.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profession">Profession</Label>
+                  <Select name="profession" onValueChange={(value) => setFormData(prev => ({ ...prev, profession: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Profession" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(Profession).map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p.charAt(0).toUpperCase() + p.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    placeholder="Search country"
+                    list="countries"
+                    required
+                  />
+                  <datalist id="countries">
+                    {topCountries.map((country) => (
+                      <option key={country} value={country} />
+                    ))}
+                  </datalist>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dpImage">Celebrity Profile Picture</Label>
+                  <Input
+                    id="dpImage"
+                    type="file"
+                    onChange={(e) => handleFileChange(e, 'dpImage')}
+                    accept="image/*"
+                    required
+                  />
+                </div>
+              </>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="celebImages">Celebrity Post Images (Multiple)</Label>
+              <Input
+                id="celebImages"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'celebImages')}
+                accept="image/*"
+                multiple
+                required
+              />
+            </div>
+            {formData.celebImages.length > 0 && (
+              <div>
+                <h3 className="font-semibold">Selected Images:</h3>
+                <ul>
+                  {formData.celebImages.map((file, index) => (
+                    <li key={index}>{file.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <h2 className="text-xl font-bold mt-8">Add Products</h2>
+            <div className="space-y-4">
+              <Input 
+                onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
+                value={currentProduct.brandName} 
+                placeholder="Brand name" 
+              />
+              <Input 
+                onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} 
+                value={currentProduct.description} 
+                placeholder="Description" 
+              />
+              <Input 
+                onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
+                value={currentProduct.seoName} 
+                placeholder="SEO name" 
+              />
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <div className="flex items-center space-x-2">
+                  <Select name="category" onValueChange={(value) => setCurrentProduct({ ...currentProduct, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" onClick={() => setIsAddingCategory(true)} variant="outline">
+                    +
+                  </Button>
+                </div>
+              </div>
 
-        {formData.products.length > 0 && (
-          <div>
-            <h3 className="font-semibold">Added Products:</h3>
-            <ul>
-              {formData.products.map((product, index) => (
-                <li key={index}>
-                  {product.brandName} - {product.category}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+              {isAddingCategory && (
+                <div className="flex items-center space-x-2">
+                  <Input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Add new category"
+                  />
+                  <Button type="button" onClick={handleAddCategory} variant="outline">
+                    Add
+                  </Button>
+                </div>
+              )}
 
-        {formData.products.length > 0 && (
-          <Button type="submit" disabled={isLoading} className="mt-4">
-            {isLoading ? (formData.celebExists ? 'Updating...' : 'Posting...') : (formData.celebExists ? 'Update Celebrity and Products' : 'Post Celebrity and Products')}
-          </Button>
-        )}
-      </form>
+              <Input 
+                onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
+                value={currentProduct.shop} 
+                placeholder="Shop" 
+              />
+              <Input 
+                onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
+                value={currentProduct.link} 
+                placeholder="Link" 
+              />
+              <div className="space-y-2">
+                <Label htmlFor="productImage">Product Image</Label>
+                <Input
+                  id="productImage"
+                  type="file"
+                  onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.files?.[0] || null })}
+                  accept="image/*"
+                />
+              </div>
+              <Button type="button" onClick={handleAddProduct}>Add Product</Button>
+            </div>
+
+            {formData.products.length > 0 && (
+              <div>
+                <h3 className="font-semibold">Added Products:</h3>
+                <ul>
+                  {formData.products.map((product, index) => (
+                    <li key={index}>
+                      {product.brandName} - {product.category}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {formData.products.length > 0 && (
+              <Button type="submit" disabled={isLoading} className="mt-4">
+                {isLoading ? (formData.celebExists ? 'Updating...' : 'Posting...') : (formData.celebExists ? 'Update Celebrity and Products' : 'Post Celebrity and Products')}
+              </Button>
+            )}
+          </form>
+          <div className="flex flex-col space-y-4 mt-4">
+            <Button onClick={() => router.push('/admin/delete-post')} className="bg-red-500 text-white">
+              Delete Post
+            </Button>
+            <Button onClick={() => router.push('/admin/delete-celebrity')} className="bg-red-500 text-white">
+              Delete Celebrity
+            </Button>
+            <Button onClick={() => router.push('/admin/update-post')} className="bg-red-500 text-white">
+              Update Post
+            </Button>
+            <Button onClick={() => router.push('/admin/update-celebrity')} className="bg-red-500 text-white">
+              Update Celebrity
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </ImageKitProvider>
   );
 }

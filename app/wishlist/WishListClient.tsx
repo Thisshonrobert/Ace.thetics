@@ -58,7 +58,7 @@ export default function WishlistClient({ initialWishlist }: WishlistClientProps)
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-8 font-poppins">Your Wishlist</h1>
+      <h1 className="text-2xl font-bold mb-8 font-signature">Your Wishlist</h1>
       {status === 'authenticated' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlist.map((product: Product) => (

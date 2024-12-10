@@ -3,7 +3,7 @@ datasource db {
   url      = env("DATABASE_URL") // The connection string stored in the .env file
 }
 
-// Add the generator block to generate Prisma client
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,6 +14,8 @@ model Celebrity {
   dp            String
   socialmediaId String
   gender        Gender?
+  profession    Profession?
+  country       String?
   posts         Post[] // Relation to the 'Post' model
 
   @@index([name])
@@ -112,4 +114,12 @@ enum Gender {
   men
   women
   kids
+}
+
+enum Profession {
+  actor
+  actress
+  artist
+  sports
+  other
 }

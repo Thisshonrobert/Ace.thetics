@@ -1,16 +1,28 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Search, X } from "lucide-react"
+import { Search, X } from 'lucide-react'
 import { useDebounce } from 'use-debounce'
 import GetRecentCelebrity, { Celebrity } from "@/lib/actions/GetRecent"
 import ImageComponent from './ImageComponent'
 import { searchCelebrities } from "@/lib/actions/SearchCelebrities"
+import { useRouter } from 'next/navigation'
 
-// Update the Celebrity type to include both 'image' and 'dp'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import { topCountries } from "../admin/AdminPageClient"
+import { Profession } from "../admin/AdminPageClient"
+
 type CelebrityWithDP = Celebrity & { dp?: string }
 
-export default function CelebritySearch() {
+export default function Component() {
+    const router = useRouter()
     const [recentCelebrities, setRecentCelebrities] = useState<CelebrityWithDP[]>([])
     const [searchResults, setSearchResults] = useState<CelebrityWithDP[]>([])
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -20,6 +32,8 @@ export default function CelebritySearch() {
     const [debouncedSearchQuery] = useDebounce(searchQuery, 300)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+    const [selectedCountry, setSelectedCountry] = useState<string>('')
+    const [selectedProfession, setSelectedProfession] = useState<string>('')
 
     useEffect(() => {
         const fetchCelebrities = async () => {
@@ -41,7 +55,10 @@ export default function CelebritySearch() {
                 dropdownRef.current &&
                 !dropdownRef.current.contains(event.target as Node) &&
                 inputRef.current &&
-                !inputRef.current.contains(event.target as Node)
+                !inputRef.current.contains(event.target as Node) &&
+                !(event.target as Element)?.closest('[role="menu"]') &&
+                !(event.target as Element)?.closest('[role="menuitem"]') &&
+                !(event.target as Element)?.closest('[data-state="open"]')
             ) {
                 setIsDropdownOpen(false)
                 setIsMobileSearchOpen(false)
@@ -63,31 +80,34 @@ export default function CelebritySearch() {
     }
 
     const handleSearch = useCallback(async (query: string) => {
-        if (query.length < 2) {
-            setSearchResults([])
-            return
-        }
-
         try {
-            const results = await searchCelebrities(query)
+            const results = await searchCelebrities(query, selectedCountry, selectedProfession)
             setSearchResults(results.map(celebrity => ({
                 ...celebrity,
-                image: celebrity.dp // Map 'dp' to 'image' for consistency
+                image: celebrity.dp
             })))
         } catch (error) {
             console.error("Failed to search celebrities:", error)
             setError("Failed to search celebrities. Please try again later.")
         }
-    }, [])
+    }, [selectedCountry, selectedProfession])
 
     useEffect(() => {
         handleSearch(debouncedSearchQuery)
-    }, [debouncedSearchQuery, handleSearch])
+    }, [debouncedSearchQuery, handleSearch, selectedCountry, selectedProfession])
 
     const renderCelebrityList = (celebrities: CelebrityWithDP[]) => (
         <div className="grid grid-cols-2 gap-4">
             {celebrities.map((celebrity) => (
-                <div key={celebrity.id} className="flex flex-col items-center">
+                <div 
+                    key={celebrity.id} 
+                    className="flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                        router.push(`/celebrity/${encodeURIComponent(celebrity.name)}`)
+                        setIsDropdownOpen(false)
+                        setIsMobileSearchOpen(false)
+                    }}
+                >
                     <div className="w-20 h-20 rounded-full overflow-hidden mb-2">
                         <ImageComponent
                             src={celebrity.image || celebrity.dp || ''}
@@ -114,9 +134,64 @@ export default function CelebritySearch() {
         </div>
     )
 
+    const FilterSection = () => (
+        <div className="flex gap-2 mb-4">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="text-sm">
+                        {selectedCountry || 'Country'}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuRadioGroup 
+                        value={selectedCountry} 
+                        onValueChange={(value) => {
+                            setSelectedCountry(value)
+                            // Ensure the main dropdown stays open
+                            setIsDropdownOpen(true)
+                            setIsMobileSearchOpen(true)
+                        }}
+                    >
+                        <DropdownMenuRadioItem value="">All Countries</DropdownMenuRadioItem>
+                        {topCountries.map((country: string) => (
+                            <DropdownMenuRadioItem key={country} value={country}>
+                                {country}
+                            </DropdownMenuRadioItem>
+                        ))}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="text-sm">
+                        {selectedProfession || 'Profession'}
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuRadioGroup 
+                        value={selectedProfession} 
+                        onValueChange={(value) => {
+                            setSelectedProfession(value)
+                            // Ensure the main dropdown stays open
+                            setIsDropdownOpen(true)
+                            setIsMobileSearchOpen(true)
+                        }}
+                    >
+                        <DropdownMenuRadioItem value="">All Professions</DropdownMenuRadioItem>
+                        {Object.values(Profession).map((prof) => (
+                            <DropdownMenuRadioItem key={prof} value={prof}>
+                                {prof.charAt(0).toUpperCase() + prof.slice(1)}
+                            </DropdownMenuRadioItem>
+                        ))}
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+    )
+
     return (
         <div className="w-full max-w-2xl mx-auto relative">
-            {/* Desktop Search */}
             <div className="relative hidden md:block">
                 <input
                     ref={inputRef}
@@ -132,14 +207,12 @@ export default function CelebritySearch() {
                 </div>
             </div>
 
-            {/* Mobile Search Icon */}
             <div className="md:hidden flex justify-end ml-1">
                 <button onClick={toggleMobileSearch} className="p-2">
                     <Search className="w-6 h-6 text-gray-600" />
                 </button>
             </div>
 
-            {/* Mobile Search Sidebar */}
             <div
                 className={`fixed inset-y-0 right-0 w-full bg-white z-50 transform transition-transform duration-300 ease-in-out ${
                     isMobileSearchOpen ? "translate-x-0" : "translate-x-full"
@@ -159,10 +232,10 @@ export default function CelebritySearch() {
                         type="text"
                         placeholder="Search celebrity"
                         className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-full focus:outline-none focus:border-purple-500 mb-4"
-                        onFocus={() => setIsMobileSearchOpen(true)}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                    <FilterSection />
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">
                         {searchQuery ? 'Search Results' : 'Recent Celebrities'}
                     </h3>
@@ -174,7 +247,6 @@ export default function CelebritySearch() {
                 </div>
             </div>
 
-            {/* Desktop Dropdown */}
             <div
                 ref={dropdownRef}
                 className={`absolute z-10 w-full mt-2 bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-500 ease-in-out ${
@@ -186,7 +258,7 @@ export default function CelebritySearch() {
                 <div className="p-4">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-semibold text-gray-800">
-                            {searchQuery ? 'Search Results' : 'Popular Celebrities'}
+                            {searchQuery ? 'Search Results' : 'Recent Celebrities'}
                         </h2>
                         <button
                             onClick={() => setIsDropdownOpen(false)}
@@ -195,6 +267,7 @@ export default function CelebritySearch() {
                             <X className="w-5 h-5" />
                         </button>
                     </div>
+                    <FilterSection />
                     {error ? (
                         <p className="text-red-500">{error}</p>
                     ) : (

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 
-// Add this interface before the POST function
 interface ProductInput {
   brandName: string;
   seoName: string;
@@ -19,7 +18,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { name, socialId, dpImage, gender, celebImages, products } = await req.json();
+    const { 
+      name, 
+      socialId, 
+      dpImage, 
+      gender, 
+      profession,
+      country,
+      celebImages, 
+      products 
+    } = await req.json();
 
     if (!name || !celebImages || !products || !Array.isArray(celebImages) || !Array.isArray(products)) {
       return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
@@ -36,6 +44,8 @@ export async function POST(req: NextRequest) {
           name,
           dp: dpImage,
           gender: gender as 'men' | 'women' | 'kids' | null,
+          profession: profession || null,
+          country: country || null,
         },
       });
     } else {
@@ -48,6 +58,8 @@ export async function POST(req: NextRequest) {
           socialmediaId: socialId,
           dp: dpImage,
           gender: gender as 'men' | 'women' | 'kids' | null,
+          profession: profession || null,
+          country: country || null,
         },
       });
     }

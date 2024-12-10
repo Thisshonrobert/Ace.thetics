@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import AdminPageClient from './AdminPageClient'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard',
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminPage() {
-  return <AdminPageClient />
+  redirect('/admin/dashboard')
 }

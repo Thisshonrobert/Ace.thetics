@@ -1,5 +1,6 @@
 import { prisma } from '@/prisma'
 import { NextResponse } from 'next/server'
+import { Product } from '@/lib/actions/GetProduct'
 
 export async function GET(request: Request, { params }: { params: { postId: string } }) {
   try {
@@ -23,7 +24,11 @@ export async function GET(request: Request, { params }: { params: { postId: stri
                 id: true,
                 brandname: true,
                 seoname: true,
-                imageUrl: true
+                imageUrl: true,
+                link: true,
+                description: true,
+                category: true,
+                shop: true
               }
             }
           }
@@ -41,7 +46,11 @@ export async function GET(request: Request, { params }: { params: { postId: stri
         id: p.Product.id,
         brandname: p.Product.brandname,
         seoname: p.Product.seoname,
-        imageUrl: p.Product.imageUrl,
+        imageUrl: p.Product.imageUrl, 
+        link: p.Product.link,
+        description: p.Product.description,
+        category: p.Product.category,
+        shop: p.Product.shop
       })),
     }
 
@@ -51,5 +60,50 @@ export async function GET(request: Request, { params }: { params: { postId: stri
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
+  }
+}
+
+export async function PUT(request: Request, { params }: { params: { postId: string } }) {
+  try {
+    const postId = parseInt(params.postId);
+    const { imageUrl, products } = await request.json();
+
+    if (isNaN(postId)) {
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 });
+    }
+
+    // Update the post's image URLs
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        imageUrl,
+      },
+    });
+
+    // Update or create products
+    for (const product of products) {
+      if (product.id) {
+        // Update existing product
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            brandname: product.brandname,
+            seoname: product.seoname,
+            imageUrl: product.imageUrl,
+            link: product.link,
+            description: product.description,
+            category: product.category,
+            shop: product.shop
+          },
+        });
+      } 
+    }
+
+    return NextResponse.json({ message: 'Post updated successfully!' });
+  } catch (error) {
+    console.error('Error updating post:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
