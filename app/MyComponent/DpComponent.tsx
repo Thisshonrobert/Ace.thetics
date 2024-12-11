@@ -35,14 +35,14 @@ export default function DpComponent({ post }: DpComponentProps) {
             alt={post.celebrityName}
             width={800}
             height={800}
-            className="w-auto h-auto max-w-full max-h-full object-contain rounded-md"
+            className="w-auto h-auto max-w-full max-h-full object-cover rounded-md"
             transformation={[{
               width: "800",
               height: "800",
               quality: "90",
               crop: "at_max",
               background: "FFFFFF",
-              focus: "auto"
+              focus: "face"
             }]}
             lqip={{ active: true, quality: 80, blur: 10 }}
             loading="lazy"

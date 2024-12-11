@@ -161,6 +161,7 @@ export default function PostComponent({
                     width: "500",
                     quality: "90",
                     focus: "auto",
+                  
                   },
                 ]}
                 className="h-full w-full object-top"
@@ -314,7 +315,7 @@ export default function PostComponent({
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-8 w-8 mt-1">
+                        <Avatar className="ml-2 h-10 w-10 mt-1">
                           <AvatarImage
                             src={
                               shops.find((shop) => shop.name === product.shop)
@@ -359,7 +360,7 @@ export default function PostComponent({
                     crop: "at_max",
                   },
                 ]}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-top"
                 loading={index === 0 ? undefined : "lazy"}
                 lqip={{ active: true, quality: 10, blur: 10 }}
               />
