@@ -25,5 +25,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error('Error checking celebrity:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }finally {
+    await prisma.$disconnect();
   }
 }

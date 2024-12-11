@@ -10,6 +10,7 @@ export async function POST() {
       }
   await ClearDB();
   return NextResponse.json({ message: 'Database cleared successfully.' });
+  
 }
 
 
