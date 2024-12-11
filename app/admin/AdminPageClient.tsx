@@ -62,7 +62,7 @@ const initialCategories = [
 const sanitizeUrl = (url: string) => {
   // Remove any existing protocol (http:// or https://)
   let cleanUrl = url.replace(/^(https?:\/\/)+(www\.)?/, '');
-  console.log(cleanUrl);
+  
   // Add https:// only if it's not already there
   return cleanUrl;
 }

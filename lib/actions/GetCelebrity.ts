@@ -6,7 +6,7 @@ export default async function GetCelebrity(name: string) {
         // Trim the name and replace multiple spaces with a single space
         const formattedName = name.trim().replace(/\s+/g, ' ');
 
-        console.log(`Searching for celebrity with name: "${formattedName}"`);
+        
 
         const celebrity = await prisma.celebrity.findFirst({
             where: {

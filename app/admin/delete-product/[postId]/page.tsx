@@ -48,7 +48,7 @@ export default function DeleteProductPage({ params }: { params: { postId: string
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
-        console.log('Fetched post data:', data)
+        
         setPost(data)
       } catch (err) {
         console.error('Error fetching post:', err)

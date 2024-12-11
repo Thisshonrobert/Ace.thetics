@@ -17,9 +17,11 @@ export async function GET(req: NextRequest) {
     const celebrity = await prisma.celebrity.findFirst({
       where: { name: { equals: name, mode: 'insensitive' } },
     });
-    if(celebrity) console.log("exists");
-    else console.log("does not exists")
-    return NextResponse.json({ exists: !!celebrity });
+    if (celebrity) {
+        return NextResponse.json({ exists: true, message: 'Celebrity exists' });
+    } else {
+        return NextResponse.json({ exists: false, message: 'Celebrity does not exist' });
+    }
   } catch (error) {
     console.error('Error checking celebrity:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
