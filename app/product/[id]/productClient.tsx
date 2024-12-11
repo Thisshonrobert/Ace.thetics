@@ -26,6 +26,7 @@ const ProductCarousel: React.FC<ProductCarouselProps> = ({ items, title, isLoadi
       container.scrollBy({ left: scrollAmount, behavior: 'smooth' })
     }
   }
+  
 
   return (
     <div className="mt-8">

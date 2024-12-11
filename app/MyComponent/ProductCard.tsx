@@ -5,6 +5,9 @@ import { CiViewList } from "react-icons/ci";
 import { IoBagOutline } from "react-icons/io5";
 import ImageComponent from "./ImageComponent";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
+import AuthDialog from "@/components/ui/AuthDialog";
+import { useState } from "react";
 
 interface ProductCardProps {
   image: string;
@@ -27,6 +30,17 @@ export default function ProductCard({
   isWishlisted,
   onWishlistToggle,
 }: ProductCardProps) {
+  const { data: session } = useSession();
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+
+  const handleWishlistClick = () => {
+    if (!session) {
+      setIsAuthDialogOpen(true);
+      return;
+    }
+    onWishlistToggle();
+  };
+
   return (
     <div className="w-full max-w-sm mx-auto">
       <BackgroundGradient className="rounded-[22px] p-1">
@@ -77,7 +91,7 @@ export default function ProductCard({
 
             <Button
               variant="gooeyRight"
-              onClick={onWishlistToggle}
+              onClick={handleWishlistClick}
               className={`flex-1 rounded-full px-4 py-2 text-white flex items-center justify-center space-x-2 ${
                 isWishlisted
                   ? "bg-red-500 hover:bg-red-600"
@@ -90,6 +104,7 @@ export default function ProductCard({
           </div>
         </div>
       </BackgroundGradient>
+      <AuthDialog isOpen={isAuthDialogOpen} onClose={() => setIsAuthDialogOpen(false)} />
     </div>
   );
 }
