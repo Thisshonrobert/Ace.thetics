@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRecoilState } from "recoil";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ChevronLeft, ChevronRight, Heart, Share } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Share, Shirt } from "lucide-react";
 import { HiArrowNarrowRight } from "react-icons/hi";
 import { motion, AnimatePresence } from "framer-motion";
 import ImageComponent from "./ImageComponent";
@@ -13,9 +13,22 @@ import { likePost } from "@/lib/actions/LikePost";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { likedPostsState } from "../store/likedPostAtom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 import ShareDialog from "./ShareDialog";
 import { useToast } from "@/hooks/use-toast";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { useTryOnLimits } from "@/hooks/useTryOnLimits";
 
 interface Product {
   id: number;
@@ -23,6 +36,7 @@ interface Product {
   seoname: string;
   shop: string;
   image: string;
+  category: string;
 }
 
 export interface PostProps {
@@ -33,6 +47,14 @@ export interface PostProps {
   postDate: string;
   products: Product[];
 }
+
+const topwearCategories = [
+  "shirt", "t-shirts", "blazers", "jackets", "ethnic wear", 
+  "tops", "blouses"
+]
+ const isTopwear = (category: string): boolean => {
+  return topwearCategories.includes(category.toLowerCase());
+ }
 
 const sortProducts = (products: Product[]) => {
   return [...products].sort((a, b) => {
@@ -62,6 +84,8 @@ export default function PostComponent({
   const { toast } = useToast();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const { remainingTries, checkLimit } = useTryOnLimits();
 
   const sortedProducts = sortProducts(products);
 
@@ -134,6 +158,26 @@ export default function PostComponent({
 
   const handleProductClick = (product: Product) => {
     router.push(`/product/${product.id}`);
+  };
+
+  const handleTryOnClick = async (productId: string, imageUrl: string) => {
+    if (!session) {
+      setShowAuthDialog(true);
+      return;
+    }
+
+    const canTryOn = await checkLimit();
+    if (!canTryOn) {
+      // Show limit reached dialog
+      toast({
+        variant: "destructive",
+        title: "Daily Limit Reached",
+        description: "You've reached your daily limit of 3 try-ons. Please try again tomorrow.",
+      });
+      return;
+    }
+
+    router.push(`/virtual-tryon/${productId}?imageUrl=${encodeURIComponent(imageUrl)}`);
   };
 
   return (
@@ -311,19 +355,30 @@ export default function PostComponent({
                       )}
                     </div>
                     <div className="flex items-center mt-1">
-                      <div className="text-xs text-gray-600">shop from: </div>
+                      <div className="text-xs text-gray-600">shop:</div>
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
-                        <Avatar className="ml-2 h-10 w-10 mt-1">
-                          <AvatarImage
-                            src={
-                              shops.find((shop) => shop.name === product.shop)
-                                ?.image
-                            }
-                          />
-                          <AvatarFallback>{product.shop}</AvatarFallback>
-                        </Avatar>
+                        <>
+                          <Avatar className="ml-2 h-10 w-10 mt-1">
+                            <AvatarImage src={shops.find((shop) => shop.name === product.shop)?.image} />
+                            <AvatarFallback>{product.shop}</AvatarFallback>
+                          </Avatar>
+                          {isTopwear(product.category) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-3"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTryOnClick(product.id.toString(), product.image);
+                            }}
+                          >
+                            <Shirt className="w-4 h-4 mr-2" />
+                            Try On 
+                          </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -506,23 +561,34 @@ export default function PostComponent({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center">
-                  <div className="text-sm text-gray-600">shop:</div>
-                  {isLoading ? (
-                    <Skeleton className="h-5 w-5 rounded-full ml-2" />
-                  ) : (
-                    <Avatar className="ml-2 mt-1">
-                      <AvatarImage
-                        src={
-                          shops.find((shop) => shop.name === product.shop)
-                            ?.image
-                        }
-                      />
-                      <AvatarFallback>{product.shop}</AvatarFallback>
-                    </Avatar>
-                  )}
+                <div className="flex items-center justify-between flex-col">
+                    <div className="flex items-center">
+                      <div className="text-sm text-gray-600 font-semibold">shop:</div>
+                      {isLoading ? (
+                        <Skeleton className="h-5 w-5 rounded-full ml-2" />
+                      ) : (
+                        <Avatar className="ml-2 mt-1">
+                          <AvatarImage src={shops.find((shop) => shop.name === product.shop)?.image} />
+                          <AvatarFallback>{product.shop}</AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTryOnClick(product.id.toString(), product.image);
+                      }}
+                    >
+                      <Shirt className="w-3 h-3 mr-2" />
+                      Try On
+                    </Button>
+                    
+                  </div>
                 </div>
-              </div>
+              
             ))}
           </div>
           <button
@@ -546,6 +612,24 @@ export default function PostComponent({
         imageUrl={celebrityImages[0]}
         title={`Check out ${celebrityName}'s style`}
       />
+      <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sign in Required</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please sign in to use the Virtual Try-On feature.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => router.push('/api/auth/signin')}
+            >
+              Sign in
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 

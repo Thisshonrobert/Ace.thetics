@@ -28,7 +28,7 @@
     "@tabler/icons-react": "^3.19.0",
     "@types/react-icons": "^3.0.0",
     "aws-sdk": "^2.1691.0",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "crypto": "^1.0.1",
@@ -54,6 +54,7 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "@gradio/client": "^1.8.0",
     "@types/formidable": "^3.4.5",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20",
