@@ -79,7 +79,8 @@ export async function GetAllLikedPosts(): Promise<LikedPost[]> {
       brandname: pp.Product.brandname,
       seoname: pp.Product.seoname,
       shop: pp.Product.shop,
-      image: pp.Product.imageUrl
+      image: pp.Product.imageUrl,
+      category: pp.Product.category
     }))
   }))
 }

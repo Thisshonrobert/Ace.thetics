@@ -13,6 +13,7 @@ export interface LikedPost {
     seoname: string;
     shop: string;
     image: string;
+    category: string;
   }[];
 }
 
