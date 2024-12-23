@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-
+import emailjs from '@emailjs/browser';
 import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 import axios, { AxiosRequestConfig } from "axios";
 import Image from 'next/image';
-import { Camera, Upload, AlertCircle } from 'lucide-react';
+import { Camera, Upload
+ } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -35,6 +36,24 @@ export default function VirtualTryOn({ params }: { params: { productId: string }
 
   const { data: session } = useSession();
   const router = useRouter();
+  const [mailStatus, setMailStatus] = useState(false);
+
+  const sendErrorEmail = (errorMessage: string) => {
+    emailjs
+      .send('service_hxg6wib', 'template_wda4fsc', {
+        error_message: errorMessage,
+        to_email: 'thisshonrobert0205@gmail.com',
+      }, '0s41OeypqWww--h3X')
+      .then(
+        () => {
+          console.log('Error email sent successfully');
+          setMailStatus(true);
+        },
+        (error:any) => {
+          console.log('Failed to send error email:', error.text);
+        }
+      );
+  };
 
   useEffect(() => {
     if (!session) {
@@ -69,10 +88,10 @@ export default function VirtualTryOn({ params }: { params: { productId: string }
       };
 
       const response = await axios.request(options);
-      console.log(response.data);
+      
      const imageBlob = new Blob([response.data], { type: "image/jpeg" });
     const responseimageUrl = URL.createObjectURL(imageBlob);
-    console.log(responseimageUrl);
+    
     setResultUrl(responseimageUrl);
       
       setLoading(false);
@@ -83,12 +102,13 @@ export default function VirtualTryOn({ params }: { params: { productId: string }
       });
 
     } catch (error) {
-      console.error("Error during virtual try-on:", error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to process virtual try-on. Please try again.",
       });
+      sendErrorEmail(errorMessage);
       setLoading(false);
     }
   };
@@ -242,6 +262,7 @@ export default function VirtualTryOn({ params }: { params: { productId: string }
           </div>
         </CardContent>
       </Card>
+      
     </div>
   );
 }
