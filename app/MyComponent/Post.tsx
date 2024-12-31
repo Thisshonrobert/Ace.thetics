@@ -184,7 +184,7 @@ export default function PostComponent({
     <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4 border">
       {/* Desktop View */}
 
-      <div className="hidden sm:flex h-[420px]">
+      <div className="hidden lg:flex h-[420px]">
         <div className="w-1/2 relative">
           {celebrityImages.map((image, index) => (
             <motion.div
@@ -355,7 +355,7 @@ export default function PostComponent({
                       )}
                     </div>
                     <div className="flex items-center mt-1">
-                      <div className="text-xs text-gray-600">shop:</div>
+                      <div className="text-xs text-gray-600 font-bold">shop:</div>
                       {isLoading ? (
                         <Skeleton className="h-5 w-5 rounded-full ml-2" />
                       ) : (
@@ -366,16 +366,17 @@ export default function PostComponent({
                           </Avatar>
                           {isTopwear(product.category) && (
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="ml-3"
+                            variant="gooeyLeft"
+                            className="relative inline-flex h-6 py-2 md:ml-4 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleTryOnClick(product.id.toString(), product.image);
                             }}
                           >
-                            <Shirt className="w-4 h-4 mr-2" />
-                            Try On 
+                            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+                            <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
+                              Try On
+                            </span>
                           </Button>
                           )}
                         </>
@@ -391,7 +392,7 @@ export default function PostComponent({
       </div>
 
       {/* Mobile View */}
-      <div className="sm:hidden">
+      <div className="lg:hidden">
         <div className="relative w-full h-[calc(100vh-200px)]">
           {celebrityImages.map((image, index) => (
             <motion.div
@@ -573,19 +574,21 @@ export default function PostComponent({
                         </Avatar>
                       )}
                     </div>
-                    
+                    {isTopwear(product.category) && (
                     <Button
-                      variant="outline"
-                      size="sm"
+                      variant="gooeyLeft"
+                      className="relative inline-flex h-6 py-2 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTryOnClick(product.id.toString(), product.image);
                       }}
                     >
-                      <Shirt className="w-3 h-3 mr-2" />
-                      Try On
+                      <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+                      <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
+                        Try On
+                      </span>
                     </Button>
-                    
+                    )}
                   </div>
                 </div>
               

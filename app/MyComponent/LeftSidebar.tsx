@@ -13,6 +13,13 @@ import { GiMale } from "react-icons/gi";
 import { HiArrowNarrowRight } from "react-icons/hi";
 import { IoIosFemale } from "react-icons/io";
 import AuthDialog from "@/components/ui/AuthDialog";
+import { Terminal } from "lucide-react"
+ 
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 
 import {
   DropdownMenu,
@@ -79,8 +86,18 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 </li>
               ))}
             </ul>
-
+            <div className="my-2">
+            <Alert >
+      <Terminal className="h-4 w-4" />
+      <AlertTitle>Disclaimer!</AlertTitle>
+      <AlertDescription>
+       This Page Contains Affiliate Links; I may earn a commission at no extra cost to you
+      </AlertDescription>
+            </Alert>
+            </div>
+           
             <footer className="p-4 border-t border-gray-200">
+            
               {!session ? (
                 <>
                   <p className="text-center font-poppins font-medium mb-2">

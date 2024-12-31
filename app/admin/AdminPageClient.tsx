@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
+
 const urlEndpoint = process.env.NEXT_PUBLIC_URL_ENDPOINT;
 const publicKey = process.env.NEXT_PUBLIC_PUBLIC_KEY;
 
@@ -501,6 +502,15 @@ export default function AdminPageClient() {
             <Button onClick={() => router.push('/admin/update-celebrity')} className="bg-red-500 text-white">
               Update Celebrity
             </Button>
+            <Button onClick={async() => {
+              if (window.confirm("Are you sure you want to clear the database? This action cannot be undone.")) {
+                await axios.post('/api/admin/clearDB')
+              }
+            }} className="bg-red-500 text-white">
+              clear db
+            </Button>
+            
+           
           </div>
         </CardContent>
       </Card>

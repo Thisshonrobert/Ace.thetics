@@ -1,10 +1,10 @@
 
 import { isAdmin } from '@/auth';
 import { ClearDB } from '@/lib/actions/ClearDB';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 
-export async function POST() {
+export async function POST(req: NextRequest) {
     if (!(await isAdmin())) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }

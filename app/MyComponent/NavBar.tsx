@@ -30,7 +30,7 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
-      isScrolled ? 'h-14 bg-white shadow-md' : 'h-22 bg-zinc-100'
+      isScrolled ? 'h-14 bg-white shadow-md' : 'h-22 bg-white'
     }`}>
       <div className={`flex items-center justify-between p-4 transition-all duration-300 ease-in-out ${
         isScrolled ? 'h-16' : 'h-24'
