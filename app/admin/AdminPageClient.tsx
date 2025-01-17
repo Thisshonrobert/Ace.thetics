@@ -103,7 +103,7 @@ export default function AdminPageClient() {
   useEffect(() => {
     if (status === "loading") return;
   
-    if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL && session.user?.email !== process.env.NEXT_PUBLIC_ADMIN1_EMAIL)) {
+    if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL )) {
       router.push('/');
     }
   }, [session, status, router]);
