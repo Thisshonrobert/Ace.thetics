@@ -102,8 +102,11 @@ export default function AdminPageClient() {
 
   useEffect(() => {
     if (status === "loading") return;
-  
+    console.log("Session:", session); // Log session data
+    console.log("Status:", status); 
+
     if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL )) {
+      window.alert("not a admin");
       router.push('/');
     }
   }, [session, status, router]);
