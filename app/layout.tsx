@@ -19,8 +19,22 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "CelebrityWears",
-  description: "Decodes what celebrities wore",
+  title: 'Ace.thetics',
+  description: 'Ace.thetics - Decodes what celebrities wore',
+  icons: {
+    icon: '/Acethetics.png'
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    }
+  }
 };
 
 export default function RootLayout({

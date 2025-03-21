@@ -38,7 +38,7 @@ export default async function GetCelebrity(name: string) {
                 date: 'desc',
             },
         });
-
+      
         return celebrityPosts.map((post) => ({
             id: post.id,
             celebrityImages: post.imageUrl,

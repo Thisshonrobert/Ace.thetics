@@ -30,7 +30,8 @@ export async function GetProduct(productid: number): Promise<Product | null> {
     });
 
     if (!product) return null;
-
+    
+ 
     return {
       id: product.id,
       category: product.category,

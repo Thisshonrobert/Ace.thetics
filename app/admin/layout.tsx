@@ -47,12 +47,12 @@ export default function AdminLayout({
                   >
                     Delete Post
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/admin/delete-product"
                     className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
                   >
                     Delete Product
-                  </Link>
+                  </Link> */}
                 </div>
               </div>
             </div>
@@ -85,12 +85,12 @@ export default function AdminLayout({
               >
                 Delete Post
               </Link>
-              <Link
+              {/* <Link
                 href="/admin/delete-product"
                 className="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:text-gray-900"
               >
                 Delete Product
-              </Link>
+              </Link> */}
             </div>
           </div>
         </nav>

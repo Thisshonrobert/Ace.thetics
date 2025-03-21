@@ -92,8 +92,21 @@ export async function POST(req: NextRequest) {
         },
       },
     });
-
+    try {
+      const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
+        method: 'POST',
+      });
+ 
+      if (!revalidateResponse.ok) {
+        const errorData = await revalidateResponse.json();
+        console.error('Revalidation failed:', errorData);
+      }
+    } catch (error) {
+      console.error('Error during revalidation fetch:', error);
+    }
+    
     return NextResponse.json({ celebrity, post }, { status: 201 });
+    
   } catch (error) {
     console.error('Error creating/updating celebrity:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

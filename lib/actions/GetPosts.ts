@@ -1,6 +1,7 @@
 'use server'
 import { prisma } from "@/prisma";
 
+
 export async function GetPosts() {
     try {
       const posts = await prisma.post.findMany({
@@ -17,7 +18,7 @@ export async function GetPosts() {
           date: 'desc',
         },
       });
-  
+    
       return posts.map(post => ({
         id: post.id,
         celebrityImages: post.imageUrl, // This is now an array
@@ -37,6 +38,7 @@ export async function GetPosts() {
       console.error("Failed to fetch posts:", error);
       return [];
     }
+    
   }
   
 export async function GetPostById(id: string) {

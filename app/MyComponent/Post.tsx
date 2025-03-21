@@ -28,7 +28,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { useTryOnLimits } from "@/hooks/useTryOnLimits";
+
 
 interface Product {
   id: number;
@@ -85,7 +85,7 @@ export default function PostComponent({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const { remainingTries, checkLimit } = useTryOnLimits();
+  
 
   const sortedProducts = sortProducts(products);
 
@@ -130,8 +130,8 @@ export default function PostComponent({
       setIsLiked(prevState => !prevState);
       console.error('Error liking post:', error);
       toast({
-        variant: "destructive",
-        title: "Error",
+        variant:"default",
+        title:"Alert",
         description: "Please sign in to like posts",
       });
     }
@@ -165,18 +165,6 @@ export default function PostComponent({
       setShowAuthDialog(true);
       return;
     }
-
-    const canTryOn = await checkLimit();
-    if (!canTryOn) {
-      // Show limit reached dialog
-      toast({
-        variant: "destructive",
-        title: "Daily Limit Reached",
-        description: "You've reached your daily limit of 3 try-ons. Please try again tomorrow.",
-      });
-      return;
-    }
-
     router.push(`/virtual-tryon/${productId}?imageUrl=${encodeURIComponent(imageUrl)}`);
   };
 

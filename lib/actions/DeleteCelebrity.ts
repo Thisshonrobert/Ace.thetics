@@ -27,7 +27,18 @@ export async function deleteCelebrity(celebrityId: number) {
       await tx.celebrity.delete({
         where: { id: celebrityId }
       })
-
+      try {
+        const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
+          method: 'POST',
+        });
+   
+        if (!revalidateResponse.ok) {
+          const errorData = await revalidateResponse.json();
+          console.error('Revalidation failed:', errorData);
+        }
+      } catch (error) {
+        console.error('Error during revalidation fetch:', error);
+      }
       return { success: true, message: 'Celebrity and related data deleted successfully' }
     })
 
