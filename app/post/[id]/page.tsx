@@ -15,7 +15,7 @@ export default async function PostPage({ params }: { params: { id: string } }) {
   const otherPosts = allPosts.filter(p => p.id !== post.id)
 
   return (
-    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%]">
+    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%] mb-3">
       {/* Featured Post */}
       <div className="mb-8">
         <Post

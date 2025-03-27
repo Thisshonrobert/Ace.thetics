@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   return (
-    <div className="mt-[35%] md:mt-[15%] lg:mt-[7%]">
+    <div className="mt-[35%] md:mt-[15%] lg:mt-[7%] mb-3">
       <ProductPageClient productId={parseInt(params.id, 10)} />
     </div>
   )

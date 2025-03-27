@@ -14,6 +14,21 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  .aspect-3\/4 {
+    aspect-ratio: 3/4;
+  }
+  
+  .post-container {
+    max-width: 430px;
+    margin: 0 auto;
+  }
+  
+  @media (max-width: 430px) {
+    .post-container {
+      max-width: 100%;
+      border-radius: 0;
+    }
+  }
 }
 
 @layer base {
@@ -70,6 +85,37 @@ body {
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Main scrolling container */
+  body {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* For larger screens */
+  @media (min-width: 768px) {
+    html {
+      scroll-padding-top: 80px;
+    }
+    
+    /* This helps create a more elegant scroll */
+    .scroll-container {
+      transition: transform 0.5s cubic-bezier(0.645, 0.045, 0.355, 1);
+    }
+  }
+  
+  /* For mobile screens */
+  @media (max-width: 767px) {
+    html {
+      scroll-padding-top: 60px;
+    }
+  }
 }
 
 @layer base {
@@ -87,4 +133,30 @@ body {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Add these font utilities */
+.font-Dancing {
+  font-family: 'Dancing Script', cursive;
+}
+
+/* Add this to help with scrolling product carousels */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom animations for scroll-triggered elements */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
 }

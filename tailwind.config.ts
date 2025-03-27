@@ -14,9 +14,13 @@ const config: Config = {
   theme: {
 	fontFamily:{
 		signature:['Great Vibes'],
-		poppins:['Poppins'],
-		Dancing:["Dancing Script"]
+		poppins:['Poppins','sans-serif'],
+		Dancing:["Dancing Script",'cursive'],
+        sans: ['Helvetica Neue', 'Arial', 'sans-serif'],
 	  },
+	  aspectRatio: {
+        '3/4': '3 / 4',
+      },
   	extend: {
 		keyframes: {
 			"shine": {

@@ -48,11 +48,11 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
         </Button>
         <button
           onClick={() => router.push("/")}
-          className={`font-bold font-signature ml-3 md:pl-[18%] transition-all duration-300 ease-in-out ${
-            isScrolled ? 'text-3xl' : 'text-5xl'
+          className={`font-bold ml-3 md:pl-[18%] transition-all duration-300 ease-in-out ${
+            isScrolled ? 'text-xl' : 'text-2xl'
           }`}
         >
-          <span className="font-Dancing font-bold">Ace</span>.Thetics
+          <span className="font-Dancing font-extrabold tracking-tight ">Ace</span><span className="font-Dancing font-bold text-gray-700">.thetics</span>
         </button>
         <div className="flex items-center">
           <div className={`hidden md:flex space-x-3 mr-2 transition-all duration-300 ease-in-out ${

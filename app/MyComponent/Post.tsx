@@ -169,7 +169,7 @@ export default function PostComponent({
   };
 
   return (
-    <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-4 border">
+    <div className="w-[90%] md:w-[70%] max-w-sm sm:max-w-3xl mx-auto bg-white rounded-3xl overflow-hidden shadow-xl mt-2 border">
       {/* Desktop View */}
 
       <div className="hidden lg:flex h-[420px]">
@@ -378,10 +378,10 @@ export default function PostComponent({
           </div>
         </div>
       </div>
-
+{/* h-[calc(100vh-200px)] */}
       {/* Mobile View */}
       <div className="lg:hidden">
-        <div className="relative w-full h-[calc(100vh-200px)]">
+        <div className="relative w-full aspect-[3/4]">
           {celebrityImages.map((image, index) => (
             <motion.div
               key={index}
@@ -404,7 +404,7 @@ export default function PostComponent({
                     crop: "at_max",
                   },
                 ]}
-                className="h-full w-full object-top"
+                className="h-full w-full object-cover"
                 loading={index === 0 ? undefined : "lazy"}
                 lqip={{ active: true, quality: 10, blur: 10 }}
               />
@@ -420,7 +420,7 @@ export default function PostComponent({
             }
             onTouchEnd={() => setCurrentImageIndex(0)}
           />
-          <div className="absolute bottom-0 left-0 right-0 top-[86%] p-4 z-30">
+          <div className="absolute bottom-0 left-0 right-0 top-[92%] p-4 z-30">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-30">
               <div className="flex items-center z-30"  onClick={() =>
                   router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)
@@ -565,7 +565,7 @@ export default function PostComponent({
                     {isTopwear(product.category) && (
                     <Button
                       variant="gooeyLeft"
-                      className="relative inline-flex h-6 py-2 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+                      className="relative w-full mt-2inline-flex h-8 py-2 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleTryOnClick(product.id.toString(), product.image);

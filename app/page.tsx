@@ -16,7 +16,7 @@ export default async function Home() {
   const posts = await GetPosts()
 
   return (
-    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%]">
+    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%] mb-3">
       <div className="space-y-8">
         {posts.length > 0 ? (
           posts.map((post) => (

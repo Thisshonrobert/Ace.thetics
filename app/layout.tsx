@@ -5,6 +5,7 @@ import AuthProvider from "./auth/AuthProvider";
 import "./globals.css";
 import RecoilProvider from "./store/recoilProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { ReactLenis } from "@/app/hooks/useSmoothScroll";
 
 // Local font imports
 const geistSans = localFont({
@@ -44,18 +45,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <ReactLenis root>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100`}
       >
-          <AuthProvider>
-            <Layout>
+        <AuthProvider>
+          <Layout>
             <RecoilProvider>
-              <main>{children}</main>
+             
+                <main className="scroll-container">{children}</main>
+              
               <Toaster />
             </RecoilProvider>
-            </Layout>
-          </AuthProvider>
+          </Layout>
+        </AuthProvider>
       </body>
+      </ReactLenis>
     </html>
   );
 }

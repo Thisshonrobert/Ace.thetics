@@ -16,7 +16,7 @@ export default async function WishlistPage() {
   const initialWishlist = await GetAllWishlistedProduct();
 
   return (
-    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%]">
+    <div className="mt-[35%] md:mt-[15%] lg:mt-[9%] mb-3">
       <WishListClient initialWishlist={initialWishlist} />
       {initialWishlist.length === 0 && (
         <div className="text-center text-gray-500">No products found.</div>
