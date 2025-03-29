@@ -194,7 +194,7 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
   }
 
   return (
-    <div className="max-w-6xl mx-auto mt-4 px-4 bg-zinc-50 rounded-xl">
+    <div className="max-w-6xl mx-auto mt-4 px-4 bg-zinc-50 rounded-xl ">
       <div className="mb-6 pt-6 max-w-sm mx-auto">
         <ProductCard 
           image={product.imageUrl}

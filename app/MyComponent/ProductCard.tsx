@@ -42,7 +42,7 @@ export default function ProductCard({
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto">
+    <div className="w-full max-w-sm mx-auto ">
       <BackgroundGradient className="rounded-[22px] p-1">
         <div className="rounded-[20px] p-4 sm:p-6 bg-white dark:bg-zinc-900">
           <div className="relative aspect-square w-full rounded-lg overflow-hidden">
@@ -50,13 +50,13 @@ export default function ProductCard({
               <ImageComponent
                 src={image}
                 alt={alt}
-                width={1200}
-                height={1200}
+                width={200}
+                height={200}
                 className="w-auto h-auto max-w-full max-h-full object-contain"
                 transformation={[
                   {
-                    width: "1200",
-                    height: "1200",
+                    width: "200",
+                    height: "200",
                     quality: "90",
                     crop: "at_max",
                     background: "FFFFFF"
