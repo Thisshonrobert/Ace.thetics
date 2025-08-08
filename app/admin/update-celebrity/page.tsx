@@ -104,6 +104,7 @@ export default function UpdateCelebrityPage() {
         </CardHeader>
         <CardContent>
           <Input
+           id="search"
             type="text"
             placeholder="Search Celebrity"
             value={searchTerm}

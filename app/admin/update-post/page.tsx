@@ -141,6 +141,7 @@ export default function UpdatePostPage() {
 
       {selectedPost && (
         <form onSubmit={handleUpdatePost} className="mt-6">
+          <h1>id: {selectedPost.id}</h1>
           <h2 className="text-xl mb-4">Editing Post: {selectedPost.Celebrity.name}</h2>
           <div>
             <label className="block mb-2">Image URLs:</label>
@@ -161,6 +162,7 @@ export default function UpdatePostPage() {
           <h3 className="text-lg mb-2">Products:</h3>
           {selectedPost.products.map((product, index) => (
             <div key={product.id} className="mb-4">
+              <h1>id: {product.id}</h1>
               <input
                 type="text"
                 value={product.brandname}

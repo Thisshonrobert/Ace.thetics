@@ -20,6 +20,7 @@ interface ImageComponentProps {
   lqip?: { active: boolean; quality?: number;blur?:number };
   loading?: "lazy" | undefined;
   fill?: boolean;
+  priority?: boolean;
 }
 
 const authenticator = async () => {
@@ -73,6 +74,7 @@ export default function ImageComponent({
   lqip = { active: true, quality: 20,blur:10 },
   loading,
   fill = false,
+  priority = false,
 }: ImageComponentProps) {
   if (!urlEndpoint || !publicKey) {
     console.error("ImageKit configuration is missing");

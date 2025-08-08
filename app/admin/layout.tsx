@@ -1,8 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { ToastContainer } from 'react-toastify'
-import 'react-toastify/dist/ReactToastify.css'
+import dynamic from 'next/dynamic'
+
+const ToastContainer = dynamic(
+  () => import('react-toastify').then(m => m.ToastContainer),
+  { ssr: false }
+)
+
 import AdminAuthWrapper from './components/AdminAuthWrapper'
 
 export default function AdminLayout({
@@ -18,13 +23,13 @@ export default function AdminLayout({
             <div className="flex justify-between h-16">
               <div className="flex">
                 <div className="flex-shrink-0 flex items-center">
-                  <Link href="/admin/dashboard" className="text-xl font-bold text-gray-800">
+                  <Link href="/admin/" className="text-xl font-bold text-gray-800">
                     Admin Dashboard
                   </Link>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                   <Link
-                    href="/admin/dashboard"
+                    href="/admin"
                     className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900"
                   >
                     Dashboard
@@ -53,6 +58,12 @@ export default function AdminLayout({
                   >
                     Delete Product
                   </Link> */}
+                  <Link
+                    href="/admin/delete-celebrity"
+                    className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-900"
+                  >
+                    Delete Celebrity
+                  </Link>
                 </div>
               </div>
             </div>

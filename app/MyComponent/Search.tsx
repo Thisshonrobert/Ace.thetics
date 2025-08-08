@@ -97,7 +97,7 @@ export default function Component() {
     }, [debouncedSearchQuery, handleSearch, selectedCountry, selectedProfession])
 
     const renderCelebrityList = (celebrities: CelebrityWithDP[]) => (
-        <div className="grid grid-cols-2 gap-4">
+        <div  className="grid grid-cols-2 gap-4">
             {celebrities.map((celebrity) => (
                 <div 
                     key={celebrity.id} 
@@ -195,12 +195,14 @@ export default function Component() {
             <div className="relative hidden md:block">
                 <input
                     ref={inputRef}
+                    id='search-results1'
                     type="text"
                     placeholder="Search celebrity"
                     className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-full focus:outline-none focus:border-purple-500"
                     onClick={() => setIsDropdownOpen(true)}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    autoComplete="off"
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3">
                     <Search className="w-5 h-5 text-gray-400" />
@@ -228,12 +230,14 @@ export default function Component() {
                         </button>
                     </div>
                     <input
+                        id='search-results'
                         ref={inputRef}
                         type="text"
                         placeholder="Search celebrity"
                         className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-full focus:outline-none focus:border-purple-500 mb-4"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        autoComplete="off"
                     />
                     <FilterSection />
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">

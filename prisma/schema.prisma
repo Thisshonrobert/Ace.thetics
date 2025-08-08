@@ -29,7 +29,7 @@ model Product {
   wishList   User[]        @relation("wishlist")
   shop        String
   description String        @default("Elevate your style, embrace the trend!")
-  link        String
+  link        String        
   imageUrl    String        @unique
   PostProduct PostProduct[]
 
@@ -45,7 +45,7 @@ model Post {
   Liked       User[]        @relation("Likes")
   likeCount   Int           @default(0) 
   products    PostProduct[]
-  Celebrity   Celebrity     @relation(fields: [celebrityId], references: [id])
+  Celebrity   Celebrity     @relation(fields: [celebrityId], references: [id], onDelete: Cascade)
 
   @@index([celebrityId])
 }
@@ -54,8 +54,8 @@ model PostProduct {
   id        Int     @id @default(autoincrement())
   postId    Int
   productId Int
-  Post      Post    @relation(fields: [postId], references: [id])
-  Product   Product @relation(fields: [productId], references: [id])
+  Post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Account {

@@ -21,6 +21,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   staticPageGenerationTimeout: 180,
+  
 }
 
 export default nextConfig;

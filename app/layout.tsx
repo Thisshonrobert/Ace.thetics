@@ -20,8 +20,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'Ace.thetics',
-  description: 'Ace.thetics - Decodes what celebrities wore',
+  title: 'Ace.thetics,aesthetic,aesthetics,fashion,celebrities,style,trends,outfit,look,inspiration,lookMax,lookMaxing,glooming',
+  description: 'Ace.thetics - Decodes what aesthetic celebrities wore ',
   icons: {
     icon: '/Acethetics.png'
   },

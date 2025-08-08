@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { ImageKitProvider } from "imagekitio-next";
 import { toast } from 'react-toastify';
+import { ImageKitProvider } from "imagekitio-next";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -320,7 +320,7 @@ export default function AdminPageClient() {
                 <div className="space-y-2">
                   <Label htmlFor="gender">Gender</Label>
                   <Select name="gender" onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
-                    <SelectTrigger>
+                    <SelectTrigger id="gender">
                       <SelectValue placeholder="Select Gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -335,7 +335,7 @@ export default function AdminPageClient() {
                 <div className="space-y-2">
                   <Label htmlFor="profession">Profession</Label>
                   <Select name="profession" onValueChange={(value) => setFormData(prev => ({ ...prev, profession: value }))}>
-                    <SelectTrigger>
+                    <SelectTrigger id="profession">
                       <SelectValue placeholder="Select Profession" />
                     </SelectTrigger>
                     <SelectContent>
@@ -356,6 +356,7 @@ export default function AdminPageClient() {
                     onChange={handleInputChange}
                     placeholder="Search country"
                     list="countries"
+                    autoComplete="country-name"
                     required
                   />
                   <datalist id="countries">
@@ -402,16 +403,19 @@ export default function AdminPageClient() {
             <h2 className="text-xl font-bold mt-8">Add Products</h2>
             <div className="space-y-4">
               <Input 
+                id='brandName'
                 onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
                 value={currentProduct.brandName} 
                 placeholder="Brand name" 
               />
               <Input 
+                id='description'
                 onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} 
                 value={currentProduct.description} 
                 placeholder="Description" 
               />
               <Input 
+                id='seoName'
                 onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
                 value={currentProduct.seoName} 
                 placeholder="SEO name" 
@@ -420,7 +424,7 @@ export default function AdminPageClient() {
                 <Label htmlFor="category">Category</Label>
                 <div className="flex items-center space-x-2">
                   <Select name="category" onValueChange={(value) => setCurrentProduct({ ...currentProduct, category: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger id="category">
                       <SelectValue placeholder="Select Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -452,11 +456,13 @@ export default function AdminPageClient() {
               )}
 
               <Input 
+                id='shop'
                 onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
                 value={currentProduct.shop} 
                 placeholder="Shop" 
               />
               <Input 
+                id='link'
                 onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
                 value={currentProduct.link} 
                 placeholder="Link" 

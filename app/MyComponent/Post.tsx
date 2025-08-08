@@ -197,6 +197,7 @@ export default function PostComponent({
                   },
                 ]}
                 className="h-full w-full object-top"
+                priority={index === 0 ? true : false}
                 loading={index === 0 ? undefined : "lazy"}
                 lqip={{ active: true, quality: 10, blur: 10 }}
               />
@@ -321,6 +322,7 @@ export default function PostComponent({
                               background: "FFFFFF",
                             },
                           ]}
+                          priority={index === 0 ? true : false}
                           lqip={{ active: true, quality: 10, blur: 10 }}
                           loading="lazy"
                         />
