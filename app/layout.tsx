@@ -6,6 +6,7 @@ import "./globals.css";
 import RecoilProvider from "./store/recoilProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { ReactLenis } from "@/app/hooks/useSmoothScroll";
+import CookieConsent from "@/components/CookieConsent";
 
 // Local font imports
 const geistSans = localFont({
@@ -56,6 +57,7 @@ export default function RootLayout({
                 <main className="scroll-container">{children}</main>
               
               <Toaster />
+              <CookieConsent />
             </RecoilProvider>
           </Layout>
         </AuthProvider>

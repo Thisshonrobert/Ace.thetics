@@ -1,11 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sorts+Mill+Goudy&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+.acethetics-heading {
+  font-family: 'Sorts Mill Goudy', serif;
+  text-transform: uppercase;
+  letter-spacing: 0.4em; /* Adjust this value to increase or decrease the space between letters */
+  font-weight: normal;
+}
 /* Add smooth scrolling behavior */
 html {
   scroll-behavior: smooth;

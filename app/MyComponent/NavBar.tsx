@@ -52,7 +52,8 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
             isScrolled ? 'text-xl' : 'text-2xl'
           }`}
         >
-          <span className="font-Dancing font-extrabold tracking-tight ">Ace</span><span className="font-Dancing font-bold text-gray-700">.thetics</span>
+          {/* <span className="font-Dancing font-extrabold tracking-tight ">Ace</span><span className="font-Dancing font-bold text-gray-700">.thetics</span> */}
+          <h1 className="acethetics-heading">Acethetics</h1>
         </button>
         <div className="flex items-center">
           <div className={`hidden md:flex space-x-3 mr-2 transition-all duration-300 ease-in-out ${

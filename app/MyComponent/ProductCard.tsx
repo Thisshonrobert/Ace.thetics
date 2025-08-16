@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import AuthDialog from "@/components/ui/AuthDialog";
 import { useState } from "react";
+import { trackAffiliateClick } from "@/lib/gtag";
 
 interface ProductCardProps {
   image: string;
@@ -18,6 +19,7 @@ interface ProductCardProps {
   link: string;
   isWishlisted: boolean;
   onWishlistToggle: () => void;
+  
 }
 
 export default function ProductCard({
@@ -29,6 +31,7 @@ export default function ProductCard({
   link,
   isWishlisted,
   onWishlistToggle,
+  
 }: ProductCardProps) {
   const { data: session } = useSession();
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
@@ -39,6 +42,13 @@ export default function ProductCard({
       return;
     }
     onWishlistToggle();
+  };
+
+  const handleAffiliateClick = () => {
+    // Track affiliate click with analytics
+   
+      trackAffiliateClick( seoname, link.split('.')[0]);
+    
   };
 
   return (
@@ -77,6 +87,7 @@ export default function ProductCard({
             <Button
               variant="gooeyLeft"
               className="flex-1 rounded-full px-4 py-2 text-white flex items-center justify-center space-x-2 bg-black text-xs font-bold dark:bg-zinc-800 hover:opacity-90 transition-opacity"
+              onClick={handleAffiliateClick}
             >
               <a
                 href={`https://${link}`}
