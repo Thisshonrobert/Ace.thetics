@@ -1,7 +1,8 @@
 import { prisma } from '@/prisma';
 import { NextResponse } from 'next/server';
+import { withMetrics } from '../../metrics/middlewareMetrics';
 
-export async function PUT(request: Request, { params }: { params: { productId: string } }) {
+async function updateProduct(request: Request, { params }: { params: { productId: string } }) {
   try {
     const productId = parseInt(params.productId);
     const { brandname, seoname, imageUrl, link, description } = await request.json();
@@ -25,7 +26,11 @@ export async function PUT(request: Request, { params }: { params: { productId: s
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
-} 
+}
+
+export const PUT = withMetrics(updateProduct, "/api/products/[productId]", {
+  counter: true,
+  
+  
+});

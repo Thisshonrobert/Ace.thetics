@@ -1,7 +1,8 @@
 import { prisma } from '@/prisma';
 import { NextResponse } from 'next/server';
+import { withMetrics } from '../../metrics/middlewareMetrics';
 
-export async function GET(
+ async function getCelebrity(
   request: Request,
   { params }: { params: { celebrityId: string } }
 ) {
@@ -35,7 +36,7 @@ export async function GET(
   }
 }
 
-export async function PUT(
+export async function updateCelebrity(
   request: Request,
   { params }: { params: { celebrityId: string } }
 ) {
@@ -66,7 +67,8 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating celebrity:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 } 
+
+export const GET = withMetrics(getCelebrity, "/api/celebrities/[celebrityId]",{counter:true,histogram:true});                                                           
+export const PUT = withMetrics(updateCelebrity, "/api/celebrities/[celebrityId]",{counter:true,histogram:true});

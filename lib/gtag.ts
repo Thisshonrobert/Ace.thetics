@@ -1,8 +1,15 @@
-export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || ''
+export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GA_ID || 'G-Z24GF0XYCW'
+
+// Debug logging
+// if (typeof window !== 'undefined') {
+//   console.log('GA_TRACKING_ID:', GA_TRACKING_ID)
+//   console.log('NEXT_PUBLIC_GA_ID env:', process.env.NEXT_PUBLIC_GA_ID)
+// }
 
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
 export const pageview = (url: string) => {
   if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    // console.log('Tracking pageview:', url, 'with ID:', GA_TRACKING_ID)
     window.gtag('config', GA_TRACKING_ID, {
       page_location: url,
     })

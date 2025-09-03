@@ -1,8 +1,9 @@
 import { prisma } from '@/prisma'
 import { NextResponse } from 'next/server'
 import { Product } from '@/lib/actions/GetProduct'
+import { withMetrics } from '../../metrics/middlewareMetrics'
 
-export async function GET(request: Request, { params }: { params: { postId: string } }) {
+async function getPost(request: Request, { params }: { params: { postId: string } }) {
   try {
     const postId = parseInt(params.postId)
     if (isNaN(postId)) {
@@ -63,7 +64,7 @@ export async function GET(request: Request, { params }: { params: { postId: stri
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { postId: string } }) {
+async function updatePost(request: Request, { params }: { params: { postId: string } }) {
   try {
     const postId = parseInt(params.postId);
     const { imageUrl, products } = await request.json();
@@ -107,3 +108,15 @@ export async function PUT(request: Request, { params }: { params: { postId: stri
     await prisma.$disconnect();
   }
 }
+
+export const GET = withMetrics(getPost, "/api/posts/[postId]", {
+    counter: true,
+    histogram: true,
+    gauge: true
+});
+
+export const PUT = withMetrics(updatePost, "/api/posts/[postId]", {
+    counter: true,
+    histogram: true,
+    gauge: true
+});

@@ -14,7 +14,7 @@ export default function Layout({ children }: PropsWithChildren) {
   usePageTracking()
 
   return (
-    <div className="max-h-screen flex flex-col">
+    <div className="flex flex-col">
       {pathname !== "/landing" && (
         <Navbar toggleLeftSidebar={() => setLeftSidebarOpen(!leftSidebarOpen)} />
       )}

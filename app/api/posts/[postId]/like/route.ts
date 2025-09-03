@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { auth } from '@/auth';
+import { withMetrics } from '@/app/api/metrics/middlewareMetrics';
 
-export async function GET(
+async function getLikeStatus(
   request: Request,
   { params }: { params: { postId: string } }
 ) {
@@ -34,4 +35,9 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}
+
+export const GET = withMetrics(getLikeStatus, "/api/posts/[postId]/like", {
+    counter: true,
+    histogram: true
+});

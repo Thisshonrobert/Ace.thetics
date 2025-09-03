@@ -12,5 +12,3 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ message: 'Database cleared successfully.' });
   
 }
-
-

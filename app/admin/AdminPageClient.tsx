@@ -98,6 +98,10 @@ export default function AdminPageClient() {
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [newCategory, setNewCategory] = useState<string>('');
   const [isAddingCategory, setIsAddingCategory] = useState<boolean>(false);
+
+  const [outfitImageUrl, setOutfitImageUrl] = useState<string>('');
+  const [outfitApiResult, setOutfitApiResult] = useState<any>(null);
+  const [isFindingOutfit, setIsFindingOutfit] = useState<boolean>(false);
   
 
   // useEffect(() => {
@@ -270,6 +274,23 @@ export default function AdminPageClient() {
       setNewCategory('');
       setIsAddingCategory(false);
     }
+  };
+
+  const handleFindOutfit = async () => {
+    if (!outfitImageUrl) {
+      toast.error('Please enter an image URL.');
+      return;
+    }
+    setIsFindingOutfit(true);
+    try {
+      const response = await axios.post('/api/automations/find-outfit', { imageUrl: outfitImageUrl });
+      setOutfitApiResult(response.data);
+      toast.success('Outfit analysis complete!');
+    } catch (error) {
+      console.error('Error finding outfit:', error);
+      toast.error('Failed to find outfit. Please check the console for details.');
+    }
+    setIsFindingOutfit(false);
   };
 
   return (
@@ -498,6 +519,68 @@ export default function AdminPageClient() {
               </Button>
             )}
           </form>
+
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold">Outfit Finder</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="outfitImageUrl">Image URL</Label>
+                <Input
+                  id="outfitImageUrl"
+                  name="outfitImageUrl"
+                  onChange={(e) => setOutfitImageUrl(e.target.value)}
+                  placeholder="Enter image URL to find outfit"
+                />
+              </div>
+              <Button type="button" onClick={handleFindOutfit} disabled={isFindingOutfit} className="mt-2">
+                {isFindingOutfit ? 'Finding...' : 'Find Outfit'}
+              </Button>
+              {outfitApiResult && (
+                <div className="mt-4">
+                  <h3 className="font-semibold">Vision API Result:</h3>
+                  <div className="p-4 bg-gray-100 rounded-md overflow-x-auto">
+                    {outfitApiResult.bestGuessLabels && outfitApiResult.bestGuessLabels.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold">Best Guess:</h4>
+                        <p>{outfitApiResult.bestGuessLabels[0].label}</p>
+                      </div>
+                    )}
+
+                    {outfitApiResult.webEntities && outfitApiResult.webEntities.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold">Web Entities:</h4>
+                        <ul>
+                          {outfitApiResult.webEntities.map((entity: any, index: number) => (
+                            <li key={index}>
+                              {entity.description} (Score: {entity.score.toFixed(2)})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {outfitApiResult.pagesWithMatchingImages && outfitApiResult.pagesWithMatchingImages.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold">Pages with Matching Images:</h4>
+                        <ul>
+                          {outfitApiResult.pagesWithMatchingImages.map((page: any, index: number) => (
+                            <li key={index}>
+                              <a href={page.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                                {page.url}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="flex flex-col space-y-4 mt-4">
             <Button onClick={() => router.push('/admin/delete-post')} className="bg-red-500 text-white">
               Delete Post

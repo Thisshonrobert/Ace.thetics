@@ -1,9 +1,8 @@
 import { prisma } from '@/prisma'
 import { NextResponse } from 'next/server'
+import { withMetrics } from '../metrics/middlewareMetrics'
 
-
-
-export async function GET() {
+async function getPosts(request: Request) {
   try {
     const posts = await prisma.post.findMany({
       select: {
@@ -28,3 +27,9 @@ export async function GET() {
     await prisma.$disconnect()
   }
 }
+
+export const GET = withMetrics(getPosts, "/api/posts", {
+    counter: true,
+    histogram: true,
+    gauge: true
+});

@@ -1,8 +1,8 @@
 import { prisma } from '@/prisma'
 import { NextResponse } from 'next/server'
+import { withMetrics } from '../metrics/middlewareMetrics'
 
-
-export async function GET() {
+async function handler(req: Request) {
   try {
     const celebrities = await prisma.celebrity.findMany({
       select: {
@@ -15,7 +15,12 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching celebrities:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-  } finally {
-    await prisma.$disconnect()
-  }
+  } 
 }
+
+// Apply metrics (counter + histogram + gauge)
+export const GET = withMetrics(handler, '/api/celebrities', {
+  counter: true,
+  histogram: true,
+  gauge: true
+});

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { X } from 'lucide-react'
+import Link from 'next/link'
 
 declare global {
   interface Window {
@@ -29,22 +30,27 @@ export default function CookieConsent() {
   }, [])
 
   const loadGoogleAnalytics = () => {
+    const gaId = process.env.NEXT_PUBLIC_GA_ID || 'G-Z24GF0XYCW'
+   
+    
     // Add Google Analytics script
     const script = document.createElement('script')
-    script.src = `https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
     script.async = true
     document.head.appendChild(script)
 
     script.onload = () => {
+      console.log('GA script loaded successfully')
       window.dataLayer = window.dataLayer || []
       window.gtag = function() {
         window.dataLayer.push(arguments)
       }
       window.gtag('js', new Date())
-      window.gtag('config', process.env.NEXT_PUBLIC_GA_ID, {
+      window.gtag('config', gaId, {
         page_location: window.location.href,
         anonymize_ip: true,
       })
+      console.log('GA config sent for:', window.location.href)
     }
   }
 
@@ -64,11 +70,11 @@ export default function CookieConsent() {
   if (!showConsent) return null
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-4 md:right-auto md:w-96">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md mx-auto">
       <Card className="shadow-lg border-2">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">🍪 We use cookies</CardTitle>
+            <CardTitle className="text-lg">🍪 Cookie Consent</CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -79,22 +85,22 @@ export default function CookieConsent() {
             </Button>
           </div>
           <CardDescription>
-            We use cookies to analyze site traffic and optimize your experience. 
-            This helps us understand which celebrity outfits you're interested in.
+            By accepting, you agree to our use of cookies. Please review our{' '}
+            <Link href="/privacy-policy" className="underline">
+              privacy policy
+            </Link>
+            .
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex flex-col sm:flex-row gap-2">
+        <CardContent>
+          <div className="flex gap-2">
             <Button onClick={acceptAnalytics} className="flex-1">
-              Accept Analytics
+              Accept
             </Button>
             <Button variant="outline" onClick={declineAnalytics} className="flex-1">
               Decline
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            You can change your preferences anytime in your browser settings.
-          </p>
         </CardContent>
       </Card>
     </div>
