@@ -86,7 +86,7 @@ export default function UpdateCelebrityPage() {
       
       const data = await response.json()
       toast.success(data.message)
-      router.push('/admin/dashboard')
+      router.push('/admin')
     } catch (error) {
       toast.error('Failed to update celebrity')
     }

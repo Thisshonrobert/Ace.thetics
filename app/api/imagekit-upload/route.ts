@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ImageKit from "imagekit";
+import '../metrics/metrics'
 
 const imagekit = new ImageKit({
   publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY!,
@@ -8,6 +9,9 @@ const imagekit = new ImageKit({
 });
 
 export async function POST(request: NextRequest) {
+  const routeLabel = '/api/imagekit-upload'
+  const startTimeMs = Date.now()
+  globalThis.metrics?.activeRequestsGauge.inc()
   console.log('Starting image upload process');
   try {
     const formData = await request.formData();
@@ -16,7 +20,11 @@ export async function POST(request: NextRequest) {
 
     if (!files || files.length === 0) {
       console.log('No files received');
-      return NextResponse.json({ error: 'Files are required' }, { status: 400 });
+      const res = NextResponse.json({ error: 'Files are required' }, { status: 400 });
+      globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '400' })
+      globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '400' }, Date.now() - startTimeMs)
+      globalThis.metrics?.activeRequestsGauge.dec()
+      return res;
     }
 
     console.log(`Processing ${files.length} files for upload`);
@@ -48,12 +56,20 @@ export async function POST(request: NextRequest) {
     const results = await Promise.all(uploadPromises);
     console.log('All files uploaded successfully');
 
-    return NextResponse.json(results);
+    const res = NextResponse.json(results);
+    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: String(res.status) })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
   } catch (error) {
     console.error('Error uploading to ImageKit:', error);
-    return NextResponse.json(
+    const res = NextResponse.json(
       { error: 'Failed to upload images' },
       { status: 500 }
     );
+    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '500' })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
   }
 }

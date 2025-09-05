@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
+import '../../metrics/metrics'
 
 interface ProductInput {
   brandName: string;
@@ -13,8 +14,15 @@ interface ProductInput {
 }
 
 export async function POST(req: NextRequest) {
+  const routeLabel = '/api/admin/create-celebrity'
+  const startTimeMs = Date.now()
+  globalThis.metrics?.activeRequestsGauge.inc()
   if (!(await isAdmin())) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const res = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '401' })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '401' }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
   }
 
   try {
@@ -30,7 +38,11 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     if (!name || !celebImages || !products || !Array.isArray(celebImages) || !Array.isArray(products)) {
-      return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
+      const res = NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
+      globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '400' })
+      globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '400' }, Date.now() - startTimeMs)
+      globalThis.metrics?.activeRequestsGauge.dec()
+      return res;
     }
 
     let celebrity = await prisma.celebrity.findFirst({
@@ -105,12 +117,18 @@ export async function POST(req: NextRequest) {
       console.error('Error during revalidation fetch:', error);
     }
     
-    return NextResponse.json({ celebrity, post }, { status: 201 });
+    const res = NextResponse.json({ celebrity, post }, { status: 201 });
+    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '201' })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '201' }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
     
   } catch (error) {
     console.error('Error creating/updating celebrity:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+    const res = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '500' })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
+  } 
 }

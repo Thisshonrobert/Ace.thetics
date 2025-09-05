@@ -1,14 +1,16 @@
-import client from "prom-client";
+import { NextResponse } from 'next/server';
+import './metrics';
 
-const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics();
 
 export async function GET() {
-  const metrics = await client.register.metrics();
-  return new Response(metrics, {
+  const metrics =  await globalThis?.metrics?.registry.metrics();
+  // console.log(metrics);
+  return new NextResponse(metrics, {
     status: 200,
     headers: {
-      "Content-Type": client.register.contentType,
+      "Content-Type": 'text/plain',
     },
   });
 }
+
+export const revalidate = 0;

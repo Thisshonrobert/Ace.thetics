@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { auth } from '@/auth';
-import { withMetrics } from '@/app/api/metrics/middlewareMetrics';
+import '../../../metrics/metrics'
 
-async function getLikeStatus(
+
+export async function GET(
   request: Request,
   { params }: { params: { postId: string } }
 ) {
+  const routeLabel = '/api/posts/[postId]/like'
+  const startTimeMs = Date.now()
+  globalThis.metrics?.activeRequestsGauge.inc()
   try {
     const session = await auth();
     if (!session?.user) {
-      return NextResponse.json({ isLiked: false });
+      const res = NextResponse.json({ isLiked: false });
+      globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(res.status) })
+      globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
+      globalThis.metrics?.activeRequestsGauge.dec()
+      return res;
     }
 
     const postId = parseInt(params.postId);
@@ -27,17 +35,21 @@ async function getLikeStatus(
 
     const isLiked = (post?.Liked ?? []).length > 0;
 
-    return NextResponse.json({ isLiked });
+    const res = NextResponse.json({ isLiked });
+    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(res.status) })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
   } catch (error) {
     console.error('Error checking like status:', error);
-    return NextResponse.json(
+    const res = NextResponse.json(
       { error: 'Internal server error' }, 
       { status: 500 }
     );
+    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: '500' })
+    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
+    globalThis.metrics?.activeRequestsGauge.dec()
+    return res;
   }
 }
 
-export const GET = withMetrics(getLikeStatus, "/api/posts/[postId]/like", {
-    counter: true,
-    histogram: true
-});
