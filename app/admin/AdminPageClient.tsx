@@ -61,10 +61,12 @@ const initialCategories = [
 ];
 
 const sanitizeUrl = (url: string) => {
-  // Remove any existing protocol (http:// or https://)
-  let cleanUrl = url.replace(/^(https?:\/\/)+(www\.)?/, '');
-  
-  // Add https:// only if it's not already there
+  // Trim whitespace and remove malformed/duplicate protocols (e.g., "https//", "https://https://")
+  let cleanUrl = url.trim();
+  // Remove any leading correct or malformed protocol occurrences
+  cleanUrl = cleanUrl.replace(/^((https?:\/\/)+|https?\/\/)/i, '');
+  // Optionally strip leading www.
+  cleanUrl = cleanUrl.replace(/^www\./i, '');
   return cleanUrl;
 }
 
@@ -99,9 +101,10 @@ export default function AdminPageClient() {
   const [newCategory, setNewCategory] = useState<string>('');
   const [isAddingCategory, setIsAddingCategory] = useState<boolean>(false);
 
-  const [outfitImageUrl, setOutfitImageUrl] = useState<string>('');
-  const [outfitApiResult, setOutfitApiResult] = useState<any>(null);
-  const [isFindingOutfit, setIsFindingOutfit] = useState<boolean>(false);
+  //future upgrade
+  // const [outfitImageUrl, setOutfitImageUrl] = useState<string>('');
+  // const [outfitApiResult, setOutfitApiResult] = useState<any>(null);
+  // const [isFindingOutfit, setIsFindingOutfit] = useState<boolean>(false);
   
 
   // useEffect(() => {
@@ -276,22 +279,23 @@ export default function AdminPageClient() {
     }
   };
 
-  const handleFindOutfit = async () => {
-    if (!outfitImageUrl) {
-      toast.error('Please enter an image URL.');
-      return;
-    }
-    setIsFindingOutfit(true);
-    try {
-      const response = await axios.post('/api/automations/find-outfit', { imageUrl: outfitImageUrl });
-      setOutfitApiResult(response.data);
-      toast.success('Outfit analysis complete!');
-    } catch (error) {
-      console.error('Error finding outfit:', error);
-      toast.error('Failed to find outfit. Please check the console for details.');
-    }
-    setIsFindingOutfit(false);
-  };
+  //future upgrade
+  // const handleFindOutfit = async () => {
+  //   if (!outfitImageUrl) {
+  //     toast.error('Please enter an image URL.');
+  //     return;
+  //   }
+  //   setIsFindingOutfit(true);
+  //   try {
+  //     const response = await axios.post('/api/automations/find-outfit', { imageUrl: outfitImageUrl });
+  //     setOutfitApiResult(response.data);
+  //     toast.success('Outfit analysis complete!');
+  //   } catch (error) {
+  //     console.error('Error finding outfit:', error);
+  //     toast.error('Failed to find outfit. Please check the console for details.');
+  //   }
+  //   setIsFindingOutfit(false);
+  // };
 
   return (
     <ImageKitProvider 
@@ -520,7 +524,8 @@ export default function AdminPageClient() {
             )}
           </form>
 
-          <Card className="mt-8">
+{/* future upgrade */}
+          {/* <Card className="mt-8">
             <CardHeader>
               <CardTitle className="text-xl font-bold">Outfit Finder</CardTitle>
             </CardHeader>
@@ -579,7 +584,7 @@ export default function AdminPageClient() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
 
           <div className="flex flex-col space-y-4 mt-4">
             <Button onClick={() => router.push('/admin/delete-post')} className="bg-red-500 text-white">

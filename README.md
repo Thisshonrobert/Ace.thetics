@@ -308,3 +308,7 @@ For support, please contact the development team or create an issue in the repos
 ---
 
 **Ace.thetics** - Decoding celebrity fashion, one post at a time.
+
+grafana charts dashboard : ![grafana](image.png)
+
+prometheus dashboard :![prometheus](image-1.png) 

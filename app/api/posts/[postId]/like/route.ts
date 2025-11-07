@@ -3,6 +3,8 @@ import { prisma } from '@/prisma';
 import { auth } from '@/auth';
 import '../../../metrics/metrics'
 
+export const runtime = 'nodejs'
+
 
 export async function GET(
   request: Request,

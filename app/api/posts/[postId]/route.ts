@@ -100,10 +100,9 @@ export async function PUT(request: Request, { params }: { params: { postId: stri
       },
     });
 
-    // Update or create products
+    // Update existing products or create and attach new ones
     for (const product of products) {
       if (product.id) {
-        // Update existing product
         await prisma.product.update({
           where: { id: product.id },
           data: {
@@ -113,10 +112,26 @@ export async function PUT(request: Request, { params }: { params: { postId: stri
             link: product.link,
             description: product.description,
             category: product.category,
-            shop: product.shop
+            shop: product.shop,
           },
         });
-      } 
+      } else {
+        // Create new product and attach to the post via join table
+        const created = await prisma.product.create({
+          data: {
+            brandname: product.brandname,
+            seoname: product.seoname,
+            imageUrl: product.imageUrl,
+            link: product.link,
+            description: product.description,
+            category: product.category,
+            shop: product.shop,
+          },
+        });
+        await prisma.postProduct.create({
+          data: { postId, productId: created.id },
+        });
+      }
     }
 
     const res = NextResponse.json({ message: 'Post updated successfully!' });

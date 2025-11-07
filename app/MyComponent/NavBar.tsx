@@ -59,8 +59,9 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
           <div className={`hidden md:flex space-x-3 mr-2 transition-all duration-300 ease-in-out ${
             isScrolled ? 'text-sm' : 'text-base'
           }`}>
-            <AiFillInstagram />
-            <FaPinterest />
+            {/*future upgrade */}
+            {/* <AiFillInstagram />
+            <FaPinterest /> */}
           </div>
           <CelebritySearch />
         </div>
