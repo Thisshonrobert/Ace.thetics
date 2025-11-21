@@ -3,6 +3,7 @@ import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 import '../../metrics/metrics'
 import axios from 'axios';
+import { revalidatePath } from 'next/cache';
 
 interface ProductInput {
   brandName: string;
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
       },
     });
     try {
+      console.log(  'Sending Telegram notification via zap...');
       await axios.post(
         "http://localhost:3002/hooks/catch/1/b2d9646b-ea94-42cf-8b9a-d059ef4901a4",
         {
@@ -123,17 +125,25 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error('Error sending Telegram notification: via zap', error);
     }
+    // Revalidate the homepage cache server-side. Prefer direct `revalidatePath` so
+    // we don't rely on an external URL or public env var. If it fails, fall back
+    // to the existing fetch-based revalidation (keeps backwards compatibility).
     try {
-      const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
-        method: 'POST',
-      });
+      revalidatePath('/');
+    } catch (err) {
+      console.error('revalidatePath failed, attempting fallback revalidation fetch:', err);
+      try {
+        const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
+          method: 'POST',
+        });
 
-      if (!revalidateResponse.ok) {
-        const errorData = await revalidateResponse.json();
-        console.error('Revalidation failed:', errorData);
+        if (!revalidateResponse.ok) {
+          const errorData = await revalidateResponse.json().catch(() => null);
+          console.error('Fallback revalidation fetch failed:', revalidateResponse.status, errorData);
+        }
+      } catch (error) {
+        console.error('Error during fallback revalidation fetch:', error);
       }
-    } catch (error) {
-      console.error('Error during revalidation fetch:', error);
     }
 
     const res = NextResponse.json({ celebrity, post }, { status: 201 });
