@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CelebritySearch from "./Search";
-import { AiFillInstagram } from "react-icons/ai";
-import { FaPinterest } from "react-icons/fa";
+// import { AiFillInstagram } from "react-icons/ai";
+// import { FaPinterest } from "react-icons/fa";
 
 export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () => void }) {
   const router = useRouter();
