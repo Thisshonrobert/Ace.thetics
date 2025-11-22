@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     try {
       console.log(  'Sending Telegram notification via zap...');
       await axios.post(
-        "https://e6dad8e90eeb.ngrok-free.app/hooks/catch/1/b2d9646b-ea94-42cf-8b9a-d059ef4901a4",
+        " https://573aa6cfe4fd.ngrok-free.app/hooks/catch/1/b2d9646b-ea94-42cf-8b9a-d059ef4901a4",
         {
           "channelUserName": "acetheticsupdates",
           "botToken": "8403896095:AAHjSnjTUB3s-YOZ1fwMGwU0fpSKJ9cexSw",
