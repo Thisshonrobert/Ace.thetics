@@ -22,45 +22,28 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://acethetics.starzc.com"),
-  title: {
-    default: "Acethetics | Celebrity Fashion, Style & Aesthetics",
-    template: `%s | Acethetics`,
+  title: "Acethetics | Celebrity Fashion, Style & Aesthetics",
+  description: "Explore the latest celebrity fashion trends, outfits, and aesthetics.",
+  icons: {
+    icon: '/Acethetics.png',
+    shortcut: '/Acethetics.png',
+    apple: '/Acethetics.png',
   },
-  description: "Explore the latest celebrity fashion trends, outfits, and aesthetics. Get inspired by your favorite stars and shop their looks. Acethetics decodes the style of celebrities.",
-  keywords: ["fashion", "celebrity fashion", "celebrity style", "aesthetics", "outfits", "style inspiration", "fashion trends", "shop the look"],
   openGraph: {
     title: "Acethetics | Celebrity Fashion, Style & Aesthetics",
-    description: "Explore the latest celebrity fashion trends, outfits, and aesthetics. Get inspired by your favorite stars and shop their looks. Acethetics decodes the style of celebrities.",
+    description: "Explore the latest celebrity fashion trends, outfits, and aesthetics.",
     url: "https://acethetics.starzc.com",
     siteName: "Acethetics",
-    images: [
-      {
-        url: "/Acethetics.png",
-        width: 1200,
-        height: 630,
-        alt: "Acethetics Logo",
-      },
-    ],
+    images: ["/Acethetics.png"],
     locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Acethetics | Celebrity Fashion, Style & Aesthetics",
-    description: "Explore the latest celebrity fashion trends, outfits, and aesthetics. Get inspired by your favorite stars and shop their looks. Acethetics decodes the style of celebrities.",
+    title: "Acethetics",
     images: ["/Acethetics.png"],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    }
-  }
+  robots: "index, follow",
 };
 
 export default function RootLayout({
@@ -90,21 +73,21 @@ export default function RootLayout({
         />
       </head>
       <ReactLenis root>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100`}
-      >
-        <AuthProvider>
-          <Layout>
-            <RecoilProvider>
-             
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-100`}
+        >
+          <AuthProvider>
+            <Layout>
+              <RecoilProvider>
+
                 <main className="scroll-container">{children}</main>
-              
-              <Toaster />
-              <CookieConsent />
-            </RecoilProvider>
-          </Layout>
-        </AuthProvider>
-      </body>
+
+                <Toaster />
+                <CookieConsent />
+              </RecoilProvider>
+            </Layout>
+          </AuthProvider>
+        </body>
       </ReactLenis>
     </html>
   );

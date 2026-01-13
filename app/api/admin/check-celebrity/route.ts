@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
 import '../../metrics/metrics'

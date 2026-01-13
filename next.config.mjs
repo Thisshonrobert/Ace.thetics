@@ -21,7 +21,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   staticPageGenerationTimeout: 180,
-  
+  // Ensure CSS is properly optimized in production builds
+  swcMinify: true,
 }
 
 export default nextConfig;

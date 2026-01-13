@@ -1,5 +1,6 @@
 'use server'
 import { prisma } from '@/prisma'
+import { revalidatePath } from 'next/cache';
 
 
 export async function deletePost(postId: number) {
@@ -17,18 +18,7 @@ export async function deletePost(postId: number) {
 
       return { success: true, message: 'Post and related products deleted successfully' }
     })
-    try {
-      const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
-        method: 'POST',
-      });
- 
-      if (!revalidateResponse.ok) {
-        const errorData = await revalidateResponse.json();
-        console.error('Revalidation failed:', errorData);
-      }
-    } catch (error) {
-      console.error('Error during revalidation fetch:', error);
-    }
+    revalidatePath('/');
     return result
   } catch (error) {
     console.error('Error deleting post:', error)
@@ -71,7 +61,7 @@ export async function deleteProductFromPost(postId: number, productId: number, d
       const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
         method: 'POST',
       });
- 
+
       if (!revalidateResponse.ok) {
         const errorData = await revalidateResponse.json();
         console.error('Revalidation failed:', errorData);
