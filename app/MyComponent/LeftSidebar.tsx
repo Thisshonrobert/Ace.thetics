@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Heart, List, Settings } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -14,7 +14,7 @@ import { HiArrowNarrowRight } from "react-icons/hi";
 import { IoIosFemale } from "react-icons/io";
 import AuthDialog from "@/components/ui/AuthDialog";
 import { Terminal } from "lucide-react"
- 
+
 import {
   Alert,
   AlertDescription,
@@ -31,7 +31,7 @@ import {
 const menuItems = [
   { icon: GiMale, label: "Men", route: "/filter/men" },
   { icon: IoIosFemale, label: "Women", route: "/filter/women" },
- 
+
   { icon: Heart, label: "Liked", route: "/liked", requiresAuth: true },
   { icon: List, label: "Wishlist", route: "/wishlist", requiresAuth: true },
 ];
@@ -54,6 +54,10 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
     <>
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetContent side="left" className="w-[240px] sm:w-[300px] p-0">
+          <div className="sr-only">
+            <SheetTitle>Navigation Menu</SheetTitle>
+            <SheetDescription>Access site navigation and user options.</SheetDescription>
+          </div>
           <nav className="h-full bg-white flex flex-col justify-between overflow-y-auto" aria-label="Main Navigation">
             <div className="flex flex-col items-center p-4 border-b">
               <Image
@@ -63,7 +67,7 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
                 height={40}
                 className="rounded-md"
               />
-              <div className="text-center mt-2">              
+              <div className="text-center mt-2">
                 <h1 className="acethetics-heading">Acethetics</h1>
 
                 <p className="block text-xs text-slate-500">Livi'n Style</p>
@@ -88,24 +92,27 @@ export default function LeftSidebar({ isOpen, onClose }: { isOpen: boolean; onCl
               ))}
             </ul>
             <div className="my-2">
-            <Alert >
-      <Terminal className="h-4 w-4" />
-      <AlertTitle>Disclaimer!</AlertTitle>
-      <AlertDescription>
-       This Page Contains Affiliate Links; I may earn a commission at no extra cost to you
-      </AlertDescription>
-            </Alert>
+              <Alert >
+                <Terminal className="h-4 w-4" />
+                <AlertTitle>Disclaimer!</AlertTitle>
+                <AlertDescription>
+                  This Page Contains Affiliate Links; I may earn a commission at no extra cost to you
+                </AlertDescription>
+              </Alert>
             </div>
-           
+
             <footer className="p-4 border-t border-gray-200">
-            
+
               {!session ? (
                 <>
                   <p className="text-center font-poppins font-medium mb-2">
                     Sign up to save outfits to your Wishlist
                   </p>
                   <Button
-                    onClick={() => router.push("/api/auth/signin")}
+                    onClick={() => {
+                      router.push("/auth/signin");
+                      onClose();
+                    }}
                     className="h-10 w-full"
                   >
                     Sign in

@@ -13,8 +13,7 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
 
-  // Hide Navbar on specific routes
-  if (pathname === '/auth/signin') return null;
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +30,9 @@ export default function Navbar({ toggleLeftSidebar }: { toggleLeftSidebar: () =>
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Hide Navbar on specific routes
+  if (pathname === '/auth/signin') return null;
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${isScrolled ? 'h-14 bg-white shadow-md' : 'h-22 bg-white'
