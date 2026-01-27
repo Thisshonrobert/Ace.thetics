@@ -1,14 +1,8 @@
 import { prisma } from '@/prisma'
-import '../metrics/metrics'
 import { NextResponse } from 'next/server'
-// import { withMetrics } from '../metrics/middlewareMetrics'
+import { withMetrics } from '../metrics/wrapper'
 
-export async function GET(request: Request) {
-  const routeLabel = '/api/posts'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
-
-  let response: NextResponse
+async function getHandler(request: Request) {
   try {
     const posts = await prisma.post.findMany({
       select: {
@@ -25,28 +19,11 @@ export async function GET(request: Request) {
         date: 'desc'
       }
     })
-    response = NextResponse.json(posts)
-    const status = response?.status ?? 500
-    const durationMs = Date.now() - startTimeMs
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(status) }, durationMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return response
+    return NextResponse.json(posts)
   } catch (error) {
     console.error('Error fetching posts:', error)
-    response = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-    const status = response?.status ?? 500
-    const durationMs = Date.now() - startTimeMs
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(status) }, durationMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return response
-  } 
- 
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
 }
 
-// export const GET = withMetrics(getPosts, "/api/posts", {
-//     counter: true,
-//     histogram: true,
-//     gauge: true
-// });
+export const GET = withMetrics(getHandler, '/api/posts');

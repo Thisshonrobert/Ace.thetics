@@ -1,3 +1,234 @@
+// "use client";
+
+// import { useState, useEffect } from "react";
+// import { Button } from "@/components/ui/button";
+// import { useSearchParams } from 'next/navigation';
+// import { useToast } from "@/hooks/use-toast";
+// import axios from "axios";
+// import Image from 'next/image';
+// import { Camera, Upload, X } from 'lucide-react';
+// import { Card, CardContent } from "@/components/ui/card";
+// import { useSession } from "next-auth/react";
+// import { useRouter } from "next/navigation";
+// import { useTryOnLimits } from "@/hooks/useTryOnLimits";
+// import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+// import CameraCapture from "@/app/components/CameraCapture";
+// import { generateTryOn } from "@/lib/actions/generateTryOn";
+
+// export default function VirtualTryOn({ params }: { params: { productId: string } }) {
+//   const [userImage, setUserImage] = useState<File | null>(null);
+//   const [resultUrl, setResultUrl] = useState<string | null>(null);
+//   const [loading, setLoading] = useState(false);
+//   const [showImageDialog, setShowImageDialog] = useState(false);
+//   const [showCamera, setShowCamera] = useState(false);
+
+//   const { toast } = useToast();
+//   const searchParams = useSearchParams();
+//   const raw = searchParams.get("imageUrl");
+//   const imageUrl = raw ? decodeURIComponent(raw) : "";
+ 
+
+//   const { status } = useSession();
+//   const router = useRouter();
+//   const { remainingTries, checkLimit } = useTryOnLimits();
+
+// // To check whether user is authenticated or not
+//   useEffect(() => {
+//     console.log(imageUrl)
+    
+
+//     if (status === "unauthenticated") {
+//       sessionStorage.setItem('redirectAfterSignIn', window.location.pathname + window.location.search);
+//       router.push('/api/auth/signin');
+//     }
+//   }, [status, router]);
+
+//   // Helper to convert File/Blob to Base64
+//   const toBase64 = (file: Blob): Promise<string> => {
+//     return new Promise((resolve, reject) => {
+//       const reader = new FileReader();
+//       reader.readAsDataURL(file);
+//       reader.onload = () => resolve(reader.result as string);
+//       reader.onerror = error => reject(error);
+//     });
+//   };
+
+//   const handleTryOn = async () => {
+//     if (!userImage || !imageUrl) return;
+
+//     // const canTryOn = await checkLimit();
+//     // if (!canTryOn) {
+//     //   toast({
+//     //     variant: "destructive",
+//     //     title: "Daily Limit Reached",
+//     //     description: "You've reached your daily limit. Please try again tomorrow.",
+//     //   });
+//     //   return;
+//     // }
+
+//     setLoading(true);
+//     try {
+//       // 1. Get Product Image as Base64 using Axios
+      
+//       // const response = await axios.get(imageUrl, { responseType: 'blob' });
+//       // console.log(response.data)
+//       // const productBase64 = await toBase64(response.data);
+//       // console.log(productBase64)
+
+//       // 2. Get User Image as Base64
+//       const userBase64 = await toBase64(userImage);
+//       console.log(userBase64)
+
+//       // 3. Call Server Action
+//       const generatedImageBase64 = await generateTryOn(userBase64, imageUrl);
+
+//       setResultUrl(generatedImageBase64);
+
+//       toast({
+//         title: "Success",
+//         description: "Virtual try-on completed successfully!",
+//       });
+
+//     } catch (error) {
+//       console.error("Try-on error:", error);
+//       toast({
+//         variant: "destructive",
+//         title: "Error",
+//         description: "Failed to process virtual try-on. Please try again.",
+//       });
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+//     const file = e.target.files?.[0];
+//     if (file) {
+//       setUserImage(file);
+//       setShowImageDialog(false);
+//     }
+//   };
+
+//   return (
+//     <div className="container mx-auto px-4 py-8 max-w-4xl mt-[35%] md:mt-[15%] lg:mt-[7%]">
+
+//       <Card className="mb-8">
+//         <CardContent className="p-6">
+//           <h2 className="text-2xl font-bold mb-6">Virtual Try-On</h2>
+//           <div className="mb-4 text-sm text-gray-500">Remaining tries: {remainingTries}</div>
+
+//           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+//             {/* User Photo */}
+//             <div>
+//               <h3 className="text-lg font-semibold mb-2">Your Photo</h3>
+//               <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 h-[400px]">
+//                 {userImage ? (
+//                   <div className="relative w-full h-full group">
+//                     <Image
+//                       src={URL.createObjectURL(userImage)}
+//                       alt="User photo"
+//                       fill
+//                       className="object-contain rounded-lg"
+//                     />
+//                     <button
+//                       onClick={() => setUserImage(null)}
+//                       className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+//                     >
+//                       <X className="h-4 w-4" />
+//                     </button>
+//                   </div>
+//                 ) : (
+//                   <div
+//                     onClick={() => setShowImageDialog(true)}
+//                     className="flex flex-col items-center justify-center h-full cursor-pointer hover:bg-gray-50 rounded-lg"
+//                   >
+//                     <Upload className="h-12 w-12 text-gray-400 mb-4" />
+//                     <p className="text-sm text-gray-600">Click to add your photo</p>
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+
+//             {/* Product Photo */}
+//             <div>
+//               <h3 className="text-lg font-semibold mb-2">Selected Product</h3>
+//               <div className="border rounded-lg bg-gray-50 p-4 h-[400px]">
+//                 <div className="relative w-full h-full">
+//                   <Image
+//                     src={imageUrl}
+//                     alt="Product"
+//                     fill
+//                     className="object-contain rounded-lg"
+//                   />
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+
+//           <div className="flex justify-center mb-8">
+//             <Button
+//               onClick={handleTryOn}
+//               disabled={!userImage || loading}
+//               className="w-full md:w-auto px-8 bg-black hover:bg-gray-800"
+//             >
+//               {loading ? 'Processing...' : 'Try On'}
+//             </Button>
+//           </div>
+
+//           {/* Result */}
+//           <div>
+//             <h3 className="text-lg font-semibold mb-2">Result</h3>
+//             <div className="border rounded-lg bg-gray-50 p-4 h-[500px]">
+//               {loading ? (
+//                 <div className="h-full flex items-center justify-center">
+//                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+//                 </div>
+//               ) : resultUrl ? (
+//                 <div className="relative w-full h-full">
+//                   <Image
+//                     src={resultUrl}
+//                     alt="Result"
+//                     fill
+//                     className="object-contain"
+//                   />
+//                 </div>
+//               ) : (
+//                 <div className="h-full flex items-center justify-center text-gray-400">
+//                   <p>Upload your photo and click Try On</p>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//         </CardContent>
+//       </Card>
+
+//       {/* Dialogs */}
+//       <Dialog open={showImageDialog} onOpenChange={setShowImageDialog}>
+//         <DialogContent>
+//           <DialogHeader>
+//             <DialogTitle>Add Photo</DialogTitle>
+//             <DialogDescription>Choose a method</DialogDescription>
+//           </DialogHeader>
+//           <div className="flex gap-4 justify-center py-4">
+//             <label className="cursor-pointer flex flex-col items-center p-4 border rounded hover:bg-gray-50">
+//               <Upload className="mb-2" />
+//               <span>Upload</span>
+//               <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+//             </label>
+//             <button onClick={() => { setShowImageDialog(false); setShowCamera(true); }} className="flex flex-col items-center p-4 border rounded hover:bg-gray-50">
+//               <Camera className="mb-2" />
+//               <span>Camera</span>
+//             </button>
+//           </div>
+//         </DialogContent>
+//       </Dialog>
+
+//       {showCamera && <CameraCapture onCapture={(file) => { setUserImage(file); setShowCamera(false); }} onClose={() => setShowCamera(false)} />}
+
+//     </div>
+//   );
+// }
 "use client";
 
 import { useState, useEffect } from "react";
@@ -360,4 +591,3 @@ export default  function VirtualTryOn({ params }: { params: { productId: string 
     </div>
   );
 }
-

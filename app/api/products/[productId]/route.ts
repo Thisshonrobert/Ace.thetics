@@ -1,12 +1,8 @@
 import { prisma } from '@/prisma';
 import { NextResponse } from 'next/server';
-// import { withMetrics } from '../../metrics/middlewareMetrics';
-import '../../metrics/metrics'
+import { withMetrics } from '../../metrics/wrapper';
 
-export async function PUT(request: Request, { params }: { params: { productId: string } }) {
-  const routeLabel = '/api/products/[productId]'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
+async function putHandler(request: Request, { params }: { params: { productId: string } }) {
   try {
     const productId = parseInt(params.productId);
     const { brandname, seoname, imageUrl, link, description } = await request.json();
@@ -26,23 +22,11 @@ export async function PUT(request: Request, { params }: { params: { productId: s
       },
     });
 
-    const res = NextResponse.json(updatedProduct);
-    globalThis.metrics?.requestCounter.inc({ method: 'PUT', route: routeLabel, status_code: String(res.status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'PUT', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
-    const res = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    globalThis.metrics?.requestCounter.inc({ method: 'PUT', route: routeLabel, status_code: '500' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'PUT', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// export const PUT = withMetrics(updateProduct, "/api/products/[productId]", {
-//   counter: true,
-  
-  
-// });
+export const PUT = withMetrics(putHandler, '/api/products/[productId]');

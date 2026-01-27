@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import ImageKit from "imagekit";
-// import { withMetrics } from '../metrics/middlewareMetrics';
-import '../metrics/metrics'
-
+import { withMetrics } from '../metrics/wrapper';
 
 const imagekit = new ImageKit({
   publicKey: process.env.NEXT_PUBLIC_PUBLIC_KEY!,
@@ -10,32 +8,17 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.NEXT_PUBLIC_URL_ENDPOINT!
 });
 
-export async function GET() {
-  const routeLabel = '/api/imagekit-auth'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
+async function getHandler() {
   try {
     const authenticationParameters = imagekit.getAuthenticationParameters();
-    const res = NextResponse.json(authenticationParameters);
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(res.status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json(authenticationParameters);
   } catch (error) {
     console.error('Error generating auth parameters:', error);
-    const res = NextResponse.json(
+    return NextResponse.json(
       { error: 'Failed to generate authentication parameters' },
       { status: 500 }
     );
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: '500' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
   }
 }
 
-// export const GET = withMetrics(getImageKitAuth, "/api/imagekit-auth", {
-//     counter: true,
-//     histogram: true,
-//     gauge: true
-// });
+export const GET = withMetrics(getHandler, '/api/imagekit-auth');

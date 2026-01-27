@@ -48,13 +48,10 @@ export interface PostProps {
   products: Product[];
 }
 
-const topwearCategories = [
-  "shirt", "t-shirts", "blazers", "jackets", "ethnic wear", 
-  "tops", "blouses"
-]
- const isTopwear = (category: string): boolean => {
-  return topwearCategories.includes(category.toLowerCase());
- }
+const isTryOnSupported = (category: string): boolean => {
+  const excludedCategories = ["accessories", "footwear", "shoes", "bags", "jewellery"];
+  return !excludedCategories.includes(category.toLowerCase());
+}
 
 const sortProducts = (products: Product[]) => {
   return [...products].sort((a, b) => {
@@ -85,7 +82,7 @@ export default function PostComponent({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  
+
 
   const sortedProducts = sortProducts(products);
 
@@ -130,8 +127,8 @@ export default function PostComponent({
       setIsLiked(prevState => !prevState);
       console.error('Error liking post:', error);
       toast({
-        variant:"default",
-        title:"Alert",
+        variant: "default",
+        title: "Alert",
         description: "Please sign in to like posts",
       });
     }
@@ -193,7 +190,7 @@ export default function PostComponent({
                     width: "500",
                     quality: "90",
                     focus: "auto",
-                  
+
                   },
                 ]}
                 className="h-full w-full object-top"
@@ -354,20 +351,20 @@ export default function PostComponent({
                             <AvatarImage src={shops.find((shop) => shop.name === product.shop)?.image} />
                             <AvatarFallback>{product.shop}</AvatarFallback>
                           </Avatar>
-                          {isTopwear(product.category) && (
-                          <Button
-                            variant="gooeyLeft"
-                            className="relative inline-flex h-6 py-2 md:ml-4 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTryOnClick(product.id.toString(), product.image);
-                            }}
-                          >
-                            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                            <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-                              Try On
-                            </span>
-                          </Button>
+                          {isTryOnSupported(product.category) && (
+                            <Button
+                              variant="gooeyLeft"
+                              className="relative inline-flex h-6 py-2 md:ml-4 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTryOnClick(product.id.toString(), product.image);
+                              }}
+                            >
+                              <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+                              <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
+                                Try On
+                              </span>
+                            </Button>
                           )}
                         </>
                       )}
@@ -380,7 +377,7 @@ export default function PostComponent({
           </div>
         </div>
       </div>
-{/* h-[calc(100vh-200px)] */}
+      {/* h-[calc(100vh-200px)] */}
       {/* Mobile View */}
       <div className="lg:hidden">
         <div className="relative w-full aspect-[3/4]">
@@ -424,9 +421,9 @@ export default function PostComponent({
           />
           <div className="absolute bottom-0 left-0 right-0 top-[92%] p-4 z-30">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-30">
-              <div className="flex items-center z-30"  onClick={() =>
-                  router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)
-                }>
+              <div className="flex items-center z-30" onClick={() =>
+                router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)
+              }>
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white bg-gray-100">
                   {isLoading ? (
                     <Skeleton className="w-full h-full rounded-full" />
@@ -553,18 +550,18 @@ export default function PostComponent({
                   </div>
                 </div>
                 <div className="flex items-center justify-between flex-col">
-                    <div className="flex items-center">
-                      <div className="text-sm text-gray-600 font-semibold">shop:</div>
-                      {isLoading ? (
-                        <Skeleton className="h-5 w-5 rounded-full ml-2" />
-                      ) : (
-                        <Avatar className="ml-2 mt-1">
-                          <AvatarImage src={shops.find((shop) => shop.name === product.shop)?.image} />
-                          <AvatarFallback>{product.shop}</AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                    {isTopwear(product.category) && (
+                  <div className="flex items-center">
+                    <div className="text-sm text-gray-600 font-semibold">shop:</div>
+                    {isLoading ? (
+                      <Skeleton className="h-5 w-5 rounded-full ml-2" />
+                    ) : (
+                      <Avatar className="ml-2 mt-1">
+                        <AvatarImage src={shops.find((shop) => shop.name === product.shop)?.image} />
+                        <AvatarFallback>{product.shop}</AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                  {isTryOnSupported(product.category) && (
                     <Button
                       variant="gooeyLeft"
                       className="relative w-full mt-2inline-flex h-8 py-2 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
@@ -578,10 +575,10 @@ export default function PostComponent({
                         Try On
                       </span>
                     </Button>
-                    )}
-                  </div>
+                  )}
                 </div>
-              
+              </div>
+
             ))}
           </div>
           <button

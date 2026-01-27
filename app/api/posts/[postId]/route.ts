@@ -1,21 +1,12 @@
 import { prisma } from '@/prisma'
 import { NextResponse } from 'next/server'
-import { Product } from '@/lib/actions/GetProduct'
-import '../../metrics/metrics'
-// import { withMetrics } from '../../metrics/middlewareMetrics'
+import { withMetrics } from '../../metrics/wrapper'
 
-export async function GET(request: Request, { params }: { params: { postId: string } }) {
-  const routeLabel = '/api/posts/[postId]'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
+async function getHandler(request: Request, { params }: { params: { postId: string } }) {
   try {
     const postId = parseInt(params.postId)
     if (isNaN(postId)) {
-      const res = NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
-      globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: '400' })
-      globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: '400' }, Date.now() - startTimeMs)
-      globalThis.metrics?.activeRequestsGauge.dec()
-      return res
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 })
     }
 
     const post = await prisma.post.findUnique({
@@ -55,7 +46,7 @@ export async function GET(request: Request, { params }: { params: { postId: stri
         id: p.Product.id,
         brandname: p.Product.brandname,
         seoname: p.Product.seoname,
-        imageUrl: p.Product.imageUrl, 
+        imageUrl: p.Product.imageUrl,
         link: p.Product.link,
         description: p.Product.description,
         category: p.Product.category,
@@ -63,27 +54,16 @@ export async function GET(request: Request, { params }: { params: { postId: stri
       })),
     }
 
-    const res = NextResponse.json(flattenedPost)
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: String(res.status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res
+    return NextResponse.json(flattenedPost)
   } catch (error) {
     console.error('Error fetching post:', error)
-    const res = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
-    globalThis.metrics?.requestCounter.inc({ method: 'GET', route: routeLabel, status_code: '500' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'GET', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   } finally {
     await prisma.$disconnect()
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { postId: string } }) {
-  const routeLabel = '/api/posts/[postId]'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
+async function putHandler(request: Request, { params }: { params: { postId: string } }) {
   try {
     const postId = parseInt(params.postId);
     const { imageUrl, products } = await request.json();
@@ -134,29 +114,12 @@ export async function PUT(request: Request, { params }: { params: { postId: stri
       }
     }
 
-    const res = NextResponse.json({ message: 'Post updated successfully!' });
-    globalThis.metrics?.requestCounter.inc({ method: 'PUT', route: routeLabel, status_code: String(res.status) })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'PUT', route: routeLabel, code: String(res.status) }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json({ message: 'Post updated successfully!' });
   } catch (error) {
     console.error('Error updating post:', error);
-    const res = NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-    globalThis.metrics?.requestCounter.inc({ method: 'PUT', route: routeLabel, status_code: '500' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'PUT', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
-  } 
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
 
-// export const GET = withMetrics(getPost, "/api/posts/[postId]", {
-//     counter: true,
-//     histogram: true,
-//     gauge: true
-// });
-
-// export const PUT = withMetrics(updatePost, "/api/posts/[postId]", {
-//     counter: true,
-//     histogram: true,
-//     gauge: true
-// });
+export const GET = withMetrics(getHandler, '/api/posts/[postId]');
+export const PUT = withMetrics(putHandler, '/api/posts/[postId]');

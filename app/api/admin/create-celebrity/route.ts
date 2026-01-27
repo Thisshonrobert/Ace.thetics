@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/prisma';
 import { isAdmin } from '@/auth';
-import '../../metrics/metrics'
 import axios from 'axios';
 import { revalidatePath } from 'next/cache';
+import { withMetrics } from '../../metrics/wrapper';
 
 interface ProductInput {
   brandName: string;
@@ -15,16 +15,9 @@ interface ProductInput {
   description?: string;
 }
 
-export async function POST(req: NextRequest) {
-  const routeLabel = '/api/admin/create-celebrity'
-  const startTimeMs = Date.now()
-  globalThis.metrics?.activeRequestsGauge.inc()
+async function postHandler(req: NextRequest) {
   if (!(await isAdmin())) {
-    const res = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '401' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '401' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -40,11 +33,7 @@ export async function POST(req: NextRequest) {
     } = await req.json();
 
     if (!name || !celebImages || !products || !Array.isArray(celebImages) || !Array.isArray(products)) {
-      const res = NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
-      globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '400' })
-      globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '400' }, Date.now() - startTimeMs)
-      globalThis.metrics?.activeRequestsGauge.dec()
-      return res;
+      return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
     }
 
     let celebrity = await prisma.celebrity.findFirst({
@@ -107,7 +96,7 @@ export async function POST(req: NextRequest) {
       },
     });
     try {
-      console.log(  'Sending Telegram notification via zap...');
+      console.log('Sending Telegram notification via zap...');
       await axios.post(
         " https://573aa6cfe4fd.ngrok-free.app/hooks/catch/1/b2d9646b-ea94-42cf-8b9a-d059ef4901a4",
         {
@@ -123,7 +112,7 @@ export async function POST(req: NextRequest) {
       );
 
     } catch (error) {
-        console.error('Error sending Telegram notification: via zap', error);
+      console.error('Error sending Telegram notification: via zap', error);
     }
     // Revalidate the homepage cache server-side. Prefer direct `revalidatePath` so
     // we don't rely on an external URL or public env var. If it fails, fall back
@@ -146,18 +135,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const res = NextResponse.json({ celebrity, post }, { status: 201 });
-    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '201' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '201' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json({ celebrity, post }, { status: 201 });
 
   } catch (error) {
     console.error('Error creating/updating celebrity:', error);
-    const res = NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-    globalThis.metrics?.requestCounter.inc({ method: 'POST', route: routeLabel, status_code: '500' })
-    globalThis.metrics?.httpRequestDurationMicroseconds.observe({ method: 'POST', route: routeLabel, code: '500' }, Date.now() - startTimeMs)
-    globalThis.metrics?.activeRequestsGauge.dec()
-    return res;
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export const POST = withMetrics(postHandler, '/api/admin/create-celebrity');
