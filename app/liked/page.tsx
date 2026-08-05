@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default async function LikedPage() {
   const initialLikedPosts = await GetAllLikedPosts();
   return (
-    <div className="mt-[35%] md:mt-[15%] lg:mt-[7%]">
+    <div className="pt-28 md:pt-32">
       <LikedPageClient initialLikedPosts={initialLikedPosts} />
     </div>
   )

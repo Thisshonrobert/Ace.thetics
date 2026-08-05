@@ -110,7 +110,7 @@
 //   };
 
 //   return (
-//     <div className="container mx-auto px-4 py-8 max-w-4xl mt-[35%] md:mt-[15%] lg:mt-[7%]">
+//     <div className="container mx-auto px-4 pb-8 max-w-4xl pt-28 md:pt-32">
 
 //       <Card className="mb-8">
 //         <CardContent className="p-6">
@@ -400,7 +400,7 @@ export default  function VirtualTryOn({ params }: { params: { productId: string 
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl mt-[35%] md:mt-[15%] lg:mt-[7%]">
+    <div className="container mx-auto px-4 pb-8 max-w-4xl pt-28 md:pt-32">
       <AlertDialog open={showInstructions} onOpenChange={setShowInstructions}>
         <AlertDialogContent>
           <AlertDialogHeader>

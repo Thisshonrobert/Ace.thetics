@@ -11,8 +11,15 @@ async function getHandler(request: Request) {
         date: true,
         Celebrity: {
           select: {
-            name: true
+            id: true,
+            name: true,
+            dp: true
           }
+        },
+        // Lets the admin post picker show "3 products" without an extra
+        // round-trip per post.
+        _count: {
+          select: { products: true }
         }
       },
       orderBy: {

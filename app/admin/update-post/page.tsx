@@ -1,473 +1,557 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { toast } from 'react-toastify';
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'react-toastify'
+import {
+  ArrowLeft,
+  Calendar,
+  Loader2,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+} from 'lucide-react'
 
-interface Product {
-  id: number;
-  brandname: string;
-  seoname: string;
-  imageUrl: string;
-  link?: string;
-  description?: string;
-  category: string;
-  shop: string;
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ImageField, ImageGalleryField } from '@/components/admin/ImageField'
+import {
+  IMAGE_FOLDERS,
+  PRODUCT_CATEGORIES,
+  sanitizeUrl,
+  titleCase,
+} from '@/constants/taxonomy'
+import { shops } from '@/constants/shop'
+
+interface EditableProduct {
+  /** Absent for products staged locally but not yet written to the database. */
+  id?: number
+  brandname: string
+  seoname: string
+  imageUrl: string
+  link: string
+  description: string
+  category: string
+  shop: string
 }
 
-interface Post {
-  id: number;
-  imageUrl: string[];
-  date: string;
-  Celebrity: {
-    name: string;
-  };
-  products: Product[];
+interface PostSummary {
+  id: number
+  imageUrl: string[]
+  date: string
+  Celebrity: { id: number; name: string; dp: string }
+  _count?: { products: number }
 }
 
-interface CelebrityOption {
-  id: number;
-  name: string;
-  dp?: string;
+interface EditablePost {
+  id: number
+  imageUrl: string[]
+  date: string
+  Celebrity: { id: number; name: string; dp: string }
+  products: EditableProduct[]
 }
+
+const emptyProduct = (): EditableProduct => ({
+  brandname: '',
+  seoname: '',
+  imageUrl: '',
+  link: '',
+  description: '',
+  category: '',
+  shop: '',
+})
+
+/** `<input type="date">` needs `yyyy-mm-dd`, not an ISO timestamp. */
+const toDateInput = (iso: string) => new Date(iso).toISOString().slice(0, 10)
 
 export default function UpdatePostPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [celebrities, setCelebrities] = useState<CelebrityOption[]>([]);
-  const [selectedCelebrity, setSelectedCelebrity] = useState<CelebrityOption | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    brandname: '',
-    seoname: '',
-    imageFile: null as File | null,
-    link: '',
-    description: '',
-    category: '',
-    shop: ''
-  });
-  const initialCategories = [
-    "shirt", "pant", "suits", "t-shirts", "jeans", "trousers", "chinos",
-    "blazers", "jackets", "ethnic wear", "activewear", "shorts",
-    "footwear", "eyewear", "accessories", "skirt", "tops", "blouses",
-    "skirts",  "leggings", "sarees"
-  ];
-  const [categories, setCategories] = useState<string[]>(initialCategories);
-  const [newCategory, setNewCategory] = useState('');
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  const router = useRouter()
+
+  const [posts, setPosts] = useState<PostSummary[]>([])
+  const [selectedPost, setSelectedPost] = useState<EditablePost | null>(null)
+  const [removedProductIds, setRemovedProductIds] = useState<number[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingPost, setIsLoadingPost] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [categories, setCategories] = useState<string[]>([...PRODUCT_CATEGORIES])
+  const [newCategory, setNewCategory] = useState('')
 
   useEffect(() => {
-    if (status === "loading") return;
-
-    if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL && session.user?.email !== process.env.NEXT_PUBLIC_ADMIN1_EMAIL)) {
-      router.push('/');
-    }
-  }, [session, status, router]);
-
-  useEffect(() => {
-    async function fetchInitial() {
-      setIsLoading(true);
+    async function fetchPosts() {
       try {
-        const [postsRes, celebsRes] = await Promise.all([
-          fetch('/api/posts'),
-          fetch('/api/celebrities'),
-        ]);
-        if (!postsRes.ok) throw new Error('Failed to fetch posts');
-        if (!celebsRes.ok) throw new Error('Failed to fetch celebrities');
-        const [postsData, celebsData] = await Promise.all([
-          postsRes.json(),
-          celebsRes.json(),
-        ]);
-        setPosts(postsData);
-        setCelebrities(celebsData);
+        const res = await fetch('/api/posts')
+        if (!res.ok) throw new Error('Failed to fetch posts')
+        setPosts(await res.json())
       } catch (err) {
-        console.error(err);
+        console.error(err)
+        toast.error('Could not load posts')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
+    fetchPosts()
+  }, [])
 
-    fetchInitial();
-  }, []);
+  const filteredPosts = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return posts
+    return posts.filter((post) => post.Celebrity.name.toLowerCase().includes(term))
+  }, [posts, searchTerm])
 
   const handlePostSelect = async (postId: number) => {
-    const response = await fetch(`/api/posts/${postId}`);
-    const data = await response.json();
-    setSelectedPost(data);
-  };
-
-  const handleUpdatePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPost) return;
-
+    setIsLoadingPost(true)
+    setRemovedProductIds([])
     try {
-      const response = await fetch(`/api/posts/${selectedPost.id}`, {
+      const res = await fetch(`/api/posts/${postId}`)
+      if (!res.ok) throw new Error('Failed to load post')
+      const data = await res.json()
+      const products: EditableProduct[] = (data.products ?? []).map((p: EditableProduct) => ({
+        ...p,
+        link: p.link ?? '',
+        description: p.description ?? '',
+      }))
+      setSelectedPost({ ...data, products })
+      // Older rows can carry categories that are no longer in the canonical
+      // list. Merge them in so the select shows the real value instead of an
+      // empty placeholder.
+      setCategories((prev) => {
+        const extra = products
+          .map((p) => p.category)
+          .filter((c): c is string => Boolean(c) && !prev.includes(c))
+        return extra.length > 0 ? [...prev, ...Array.from(new Set(extra))] : prev
+      })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      console.error(err)
+      toast.error('Could not load that post')
+    } finally {
+      setIsLoadingPost(false)
+    }
+  }
+
+  /** Immutably patches one product in the working copy. */
+  const patchProduct = useCallback(
+    (index: number, patch: Partial<EditableProduct>) => {
+      setSelectedPost((prev) => {
+        if (!prev) return prev
+        const products = prev.products.map((product, i) =>
+          i === index ? { ...product, ...patch } : product
+        )
+        return { ...prev, products }
+      })
+    },
+    []
+  )
+
+  const removeProduct = (index: number) => {
+    setSelectedPost((prev) => {
+      if (!prev) return prev
+      const target = prev.products[index]
+      if (target.id) setRemovedProductIds((ids) => [...ids, target.id!])
+      return { ...prev, products: prev.products.filter((_, i) => i !== index) }
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedPost) return
+
+    if (selectedPost.imageUrl.length === 0) {
+      toast.error('Add at least one celebrity image')
+      return
+    }
+    const incomplete = selectedPost.products.find(
+      (p) => !p.brandname.trim() || !p.imageUrl.trim()
+    )
+    if (incomplete) {
+      toast.error('Every product needs a brand name and an image')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const res = await fetch(`/api/posts/${selectedPost.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageUrl: selectedPost.imageUrl,
-          products: selectedPost.products,
+          date: selectedPost.date,
+          products: selectedPost.products.map((p) => ({
+            ...p,
+            link: sanitizeUrl(p.link),
+          })),
+          removedProductIds,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to update post')
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update post');
-      }
-
-      toast.success(data.message || 'Post updated successfully!', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      
-      router.push('/admin/delete-post');
+      toast.success(data.message || 'Post updated successfully!')
+      setRemovedProductIds([])
+      // Keep the list in sync so the thumbnail reflects the new images.
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === selectedPost.id
+            ? { ...p, imageUrl: selectedPost.imageUrl, date: selectedPost.date }
+            : p
+        )
+      )
     } catch (error) {
-      console.error('Error updating post:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to update post. Please try again.', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      console.error('Error updating post:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to update post')
+    } finally {
+      setIsSaving(false)
     }
-  };
+  }
 
-  const filteredPosts = selectedCelebrity
-    ? posts.filter(post => post.Celebrity.name === selectedCelebrity.name)
-    : posts.filter(post => post.Celebrity.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  const sanitizeUrl = (url: string) => {
-    let clean = (url || '').trim();
-    clean = clean.replace(/^((https?:\/\/)+|https?\/\/)/i, '');
-    clean = clean.replace(/^www\./i, '');
-    return clean;
-  };
-
-  const uploadImage = async (file: File): Promise<string> => {
-    const form = new FormData();
-    form.append('file', file);
-    form.append('folder', '/products');
-    const res = await fetch('/api/imagekit-upload', { method: 'POST', body: form });
-    if (!res.ok) throw new Error('Image upload failed');
-    const data = await res.json();
-    // API returns array for multiple files; for single, use first item
-    if (Array.isArray(data)) {
-      return data[0]?.url || '';
-    }
-    return data?.[0]?.url || data?.url || '';
-  };
-
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-4 px-4">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Update Post</h1>
-      <div className="grid gap-4 sm:grid-cols-2">
+    <div className="px-4 pb-16">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <label className="block mb-2 font-semibold">Select Celebrity</label>
-          <select
-            className="border p-2 w-full"
-            value={selectedCelebrity?.id ?? ''}
-            onChange={(e) => {
-              const id = Number(e.target.value);
-              const celeb = celebrities.find(c => c.id === id) || null;
-              setSelectedCelebrity(celeb);
-              setSelectedPost(null);
-            }}
-          >
-            <option value="">-- Choose --</option>
-            {celebrities.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          {!selectedCelebrity && (
-            <>
-              <label className="block mt-4 mb-2 font-semibold">Or search by name</label>
-              <input
-                type="text"
-                placeholder="Search by Celebrity Name"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border p-2 w-full"
-              />
-            </>
-          )}
-          <ul className="mt-4">
-            {filteredPosts.map(post => (
-              <li key={post.id} className="mb-2">
-                <button onClick={() => handlePostSelect(post.id)} className="text-blue-600 underline">
-                  Post #{post.id} • {new Date(post.date).toLocaleDateString()} • {post.Celebrity.name}
-                </button>
-              </li>
-            ))}
-            {filteredPosts.length === 0 && (
-              <p className="text-sm text-gray-500">No posts found.</p>
-            )}
-          </ul>
+          <h1 className="text-2xl font-bold text-gray-900">Update Post</h1>
+          <p className="text-sm text-gray-500">
+            Edit images, product details and the post date. Changes go live immediately.
+          </p>
         </div>
+        {selectedPost && (
+          <Button variant="outline" onClick={() => setSelectedPost(null)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to all posts
+          </Button>
+        )}
       </div>
 
-      {selectedPost && (
-        <form onSubmit={handleUpdatePost} className="mt-6">
-          <h1>id: {selectedPost.id}</h1>
-          <h2 className="text-xl mb-4">Editing Post: {selectedPost.Celebrity.name}</h2>
-          <div>
-            <label className="block mb-2">Image URLs:</label>
-            {selectedPost.imageUrl.map((url, index) => (
-              <input
-                key={index}
-                type="text"
-                value={url}
-                onChange={(e) => {
-                  const newUrls = [...selectedPost.imageUrl];
-                  newUrls[index] = e.target.value;
-                  setSelectedPost({ ...selectedPost, imageUrl: newUrls });
-                }}
-                className="border p-2 mb-2 w-full"
+      {!selectedPost ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Choose a post</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                id="post-search"
+                placeholder="Search by celebrity name"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
               />
+            </div>
+
+            {filteredPosts.length === 0 ? (
+              <p className="py-12 text-center text-sm text-gray-500">
+                No posts match “{searchTerm}”.
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredPosts.map((post) => (
+                  <button
+                    key={post.id}
+                    type="button"
+                    onClick={() => handlePostSelect(post.id)}
+                    className="group flex gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left transition hover:border-indigo-400 hover:shadow-md"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={post.imageUrl[0]}
+                      alt={post.Celebrity.name}
+                      className="h-20 w-16 flex-shrink-0 rounded-lg bg-gray-100 object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-gray-900 group-hover:text-indigo-600">
+                        {post.Celebrity.name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(post.date).toLocaleDateString()}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        #{post.id} · {post.imageUrl.length} image
+                        {post.imageUrl.length === 1 ? '' : 's'}
+                        {post._count ? ` · ${post._count.products} product${post._count.products === 1 ? '' : 's'}` : ''}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : isLoadingPost ? (
+        <Skeleton className="h-96 w-full rounded-xl" />
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <datalist id="admin-shops">
+            {shops.map((shop) => (
+              <option key={shop.name} value={shop.name} />
             ))}
-          </div>
-          <h3 className="text-lg mb-2">Products:</h3>
-          {selectedPost.products.map((product, index) => (
-            <div key={product.id} className="mb-4">
-              <h1>id: {product.id}</h1>
-              <input
-                type="text"
-                value={product.brandname}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].brandname = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="Brand Name"
-                className="border p-2 mb-2 w-full"
+          </datalist>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center gap-3 text-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedPost.Celebrity.dp}
+                  alt={selectedPost.Celebrity.name}
+                  className="h-10 w-10 rounded-full bg-gray-100 object-cover"
+                />
+                <span>{selectedPost.Celebrity.name}</span>
+                <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-normal text-gray-500">
+                  Post #{selectedPost.id}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="max-w-xs space-y-2">
+                <Label htmlFor="post-date" className="flex items-center gap-2">
+                  <Calendar className="h-3.5 w-3.5" /> Post date
+                </Label>
+                <Input
+                  id="post-date"
+                  type="date"
+                  value={toDateInput(selectedPost.date)}
+                  onChange={(e) =>
+                    setSelectedPost({
+                      ...selectedPost,
+                      date: new Date(e.target.value).toISOString(),
+                    })
+                  }
+                />
+              </div>
+
+              <ImageGalleryField
+                label="Celebrity images"
+                values={selectedPost.imageUrl}
+                folder={IMAGE_FOLDERS.celebrities}
+                onChange={(urls) => setSelectedPost({ ...selectedPost, imageUrl: urls })}
+                emptyHint="No images on this post yet — add at least one."
               />
-              <input
-                type="text"
-                value={product.seoname}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].seoname = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="SEO Name"
-                className="border p-2 mb-2 w-full"
-              />
-              <input
-                type="text"
-                value={product.imageUrl}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].imageUrl = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="Image URL"
-                className="border p-2 mb-2 w-full"
-              />
-              <input
-                type="text"
-                value={product.link || ''}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].link = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="Link"
-                className="border p-2 mb-2 w-full"
-              />
-              <input
-                type="text"
-                value={product.description || ''}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].description = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="Description"
-                className="border p-2 mb-2 w-full"
-              />
-              <div className="mb-2">
-                <label className="block text-sm mb-1">Category</label>
-                <select
-                  className="border p-2 w-full"
-                  value={product.category || ''}
-                  onChange={(e) => {
-                    const newProducts = [...selectedPost.products];
-                    newProducts[index].category = e.target.value;
-                    setSelectedPost({ ...selectedPost, products: newProducts });
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-lg">
+                Products{' '}
+                <span className="text-sm font-normal text-gray-500">
+                  ({selectedPost.products.length})
+                </span>
+              </CardTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setSelectedPost({
+                    ...selectedPost,
+                    products: [...selectedPost.products, emptyProduct()],
+                  })
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add product
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedPost.products.length === 0 && (
+                <p className="rounded-lg border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
+                  No products on this post. Add one above.
+                </p>
+              )}
+
+              {selectedPost.products.map((product, index) => (
+                <div
+                  key={product.id ?? `new-${index}`}
+                  className="grid gap-5 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-[180px_1fr]"
+                >
+                  <div className="space-y-2">
+                    <ImageField
+                      value={product.imageUrl}
+                      folder={IMAGE_FOLDERS.products}
+                      onChange={(url) => patchProduct(index, { imageUrl: url })}
+                    />
+                    <p className="text-center text-xs text-gray-400">
+                      {product.id ? `Product #${product.id}` : 'New product'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`brand-${index}`}>Brand name</Label>
+                        <Input
+                          id={`brand-${index}`}
+                          value={product.brandname}
+                          onChange={(e) => patchProduct(index, { brandname: e.target.value })}
+                          placeholder="e.g. Louis Philippe"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`shop-${index}`}>Shop</Label>
+                        {/* Free text with suggestions rather than a hard select:
+                            the shop list in constants/shop.ts only covers the
+                            logos we ship, but products may legitimately come
+                            from other retailers. */}
+                        <Input
+                          id={`shop-${index}`}
+                          value={product.shop}
+                          onChange={(e) =>
+                            patchProduct(index, { shop: e.target.value.toLowerCase() })
+                          }
+                          list="admin-shops"
+                          placeholder="e.g. amazon"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`seoname-${index}`}>Product name (SEO)</Label>
+                      <Input
+                        id={`seoname-${index}`}
+                        value={product.seoname}
+                        onChange={(e) => patchProduct(index, { seoname: e.target.value })}
+                        placeholder="Full product title shown to visitors"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`description-${index}`}>Description</Label>
+                      <textarea
+                        id={`description-${index}`}
+                        value={product.description}
+                        onChange={(e) => patchProduct(index, { description: e.target.value })}
+                        rows={2}
+                        placeholder="Elevate your style, embrace the trend!"
+                        className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`category-${index}`}>Category</Label>
+                        <Select
+                          value={product.category}
+                          onValueChange={(value) => patchProduct(index, { category: value })}
+                        >
+                          <SelectTrigger id={`category-${index}`}>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map((c) => (
+                              <SelectItem key={c} value={c}>
+                                {titleCase(c)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor={`link-${index}`}>Buy link</Label>
+                        <Input
+                          id={`link-${index}`}
+                          value={product.link}
+                          onChange={(e) => patchProduct(index, { link: e.target.value })}
+                          placeholder="amazon.in/dp/XXXX"
+                        />
+                        {product.link && (
+                          <p className="truncate text-xs text-gray-400">
+                            Saved as: {sanitizeUrl(product.link)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeProduct(index)}
+                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Remove from post
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex flex-wrap items-end gap-2 border-t pt-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="new-category">Need a new category?</Label>
+                  <Input
+                    id="new-category"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="e.g. hoodies"
+                    className="w-56"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const value = newCategory.trim().toLowerCase()
+                    if (!value) return
+                    if (categories.includes(value)) {
+                      toast.info('That category already exists')
+                      return
+                    }
+                    setCategories((prev) => [...prev, value])
+                    setNewCategory('')
+                    toast.success(`“${value}” is now selectable`)
                   }}
                 >
-                  <option value="">Select Category</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                  ))}
-                </select>
+                  Add category
+                </Button>
               </div>
-              <input
-                type="text"
-                value={product.shop || ''}
-                onChange={(e) => {
-                  const newProducts = [...selectedPost.products];
-                  newProducts[index].shop = e.target.value;
-                  setSelectedPost({ ...selectedPost, products: newProducts });
-                }}
-                placeholder="Shop"
-                className="border p-2 mb-2 w-full"
-              />
-            </div>
-          ))}
-          <div className="mt-6 p-4 border rounded-md">
-            <h4 className="font-semibold mb-3">Add New Product to this Post</h4>
-            <div className="grid gap-2">
-              <input
-                id="new-brand"
-                type="text"
-                placeholder="Brand Name"
-                className="border p-2 w-full"
-                value={newProduct.brandname}
-                onChange={(e) => setNewProduct({ ...newProduct, brandname: e.target.value })}
-              />
-            </div>
-            <div className="grid gap-2 mt-2">
-              <input
-                type="text"
-                placeholder="SEO Name"
-                className="border p-2 w-full"
-                id="new-seoname"
-                value={newProduct.seoname}
-                onChange={(e) => setNewProduct({ ...newProduct, seoname: e.target.value })}
-              />
-              <input
-                type="file"
-                accept="image/*"
-                className="border p-2 w-full"
-                onChange={(e) => setNewProduct({ ...newProduct, imageFile: e.target.files?.[0] || null })}
-              />
-              <input
-                type="text"
-                placeholder="Link (domain/path)"
-                className="border p-2 w-full"
-                id="new-link"
-                value={newProduct.link}
-                onChange={(e) => setNewProduct({ ...newProduct, link: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                className="border p-2 w-full"
-                id="new-desc"
-                value={newProduct.description}
-                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-              />
-              <div>
-                <label className="block text-sm mb-1">Category</label>
-                <div className="flex gap-2">
-                  <select
-                    className="border p-2 w-full"
-                    value={newProduct.category}
-                    onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map((c) => (
-                      <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="px-3 py-2 border rounded"
-                    onClick={() => setIsAddingCategory(true)}
-                  >
-                    +
-                  </button>
-                </div>
-                {isAddingCategory && (
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      className="border p-2 w-full"
-                      placeholder="Add new category"
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="px-3 py-2 border rounded"
-                      onClick={() => {
-                        if (newCategory && !categories.includes(newCategory.toLowerCase())) {
-                          setCategories(prev => [...prev, newCategory.toLowerCase()]);
-                          setNewCategory('');
-                          setIsAddingCategory(false);
-                        }
-                      }}
-                    >
-                      Add
-                    </button>
-                  </div>
+            </CardContent>
+          </Card>
+
+          <div className="sticky bottom-0 -mx-4 flex items-center justify-between gap-3 border-t bg-white/95 px-4 py-3 backdrop-blur">
+            <p className="text-xs text-gray-500">
+              {removedProductIds.length > 0 &&
+                `${removedProductIds.length} product${removedProductIds.length === 1 ? '' : 's'} will be detached on save.`}
+            </p>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => router.push('/admin')}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" /> Save changes
+                  </>
                 )}
-              </div>
-              <input
-                type="text"
-                placeholder="Shop"
-                className="border p-2 w-full"
-                id="new-shop"
-                value={newProduct.shop}
-                onChange={(e) => setNewProduct({ ...newProduct, shop: e.target.value })}
-              />
-              <button
-                type="button"
-                className="bg-blue-600 text-white px-3 py-2 rounded mt-2 disabled:opacity-60"
-                disabled={isUploading}
-                onClick={async () => {
-                  if (!selectedPost) return;
-                  if (!newProduct.imageFile) {
-                    toast.error('Please select a product image');
-                    return;
-                  }
-                  try {
-                    setIsUploading(true);
-                    const imageUrl = await uploadImage(newProduct.imageFile);
-                    const staged: any = {
-                      brandname: newProduct.brandname,
-                      seoname: newProduct.seoname,
-                      imageUrl,
-                      link: sanitizeUrl(newProduct.link),
-                      description: newProduct.description,
-                      category: newProduct.category,
-                      shop: newProduct.shop,
-                    };
-                    setSelectedPost({ ...selectedPost, products: [...selectedPost.products, staged] as any });
-                    setNewProduct({ brandname: '', seoname: '', imageFile: null, link: '', description: '', category: '', shop: '' });
-                    toast.success('New product staged for addition. Click Update Post to save.');
-                  } catch (e) {
-                    toast.error('Failed to upload product image');
-                  } finally {
-                    setIsUploading(false);
-                  }
-                }}
-              >
-                {isUploading ? 'Uploading...' : 'Add Product to This Post'}
-              </button>
+              </Button>
             </div>
           </div>
-          <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">
-            Update Post
-          </button>
         </form>
       )}
     </div>
-  );
-} 
+  )
+}

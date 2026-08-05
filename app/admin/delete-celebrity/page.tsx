@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'react-toastify'
+import { Search, Trash2 } from 'lucide-react'
+
 import { deleteCelebrity } from '@/lib/actions/DeleteCelebrity'
-import { useSession } from 'next-auth/react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 
 interface Celebrity {
   id: number
@@ -15,85 +21,134 @@ export default function DeleteCelebrityPage() {
   const [celebrities, setCelebrities] = useState<Celebrity[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-  const { data: session, status } = useSession();
-
-
-  useEffect(() => {
-    if (status === "loading") return;
-  
-    // Redirect if the user is not logged in or the email is not one of the allowed admin emails
-    if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL )) {
-      router.push('/');
-    }
-  }, [session, status, router]);
+  const [searchTerm, setSearchTerm] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<Celebrity | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchCelebrities() {
       try {
         const response = await fetch('/api/celebrities')
-        if (!response.ok) {
-          throw new Error('Failed to fetch celebrities')
-        }
-        const data = await response.json()
-        setCelebrities(data)
+        if (!response.ok) throw new Error('Failed to fetch celebrities')
+        setCelebrities(await response.json())
       } catch (err) {
-        setError('Failed to load celebrities')
         console.error(err)
+        setError('Failed to load celebrities')
       } finally {
         setIsLoading(false)
       }
     }
-
     fetchCelebrities()
   }, [])
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this celebrity? This action cannot be undone.')) {
-      setIsLoading(true)
-      try {
-        const result = await deleteCelebrity(id)
-        if (result.success) {
-          setCelebrities(celebrities.filter(celeb => celeb.id !== id))
-          alert(result.message)
-        } else {
-          throw new Error(result.message)
-        }
-      } catch (err) {
-        setError('Failed to delete celebrity')
-        console.error(err)
-      } finally {
-        setIsLoading(false)
-      }
+  const filtered = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return celebrities
+    return celebrities.filter((c) => c.name.toLowerCase().includes(term))
+  }, [celebrities, searchTerm])
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return
+    setIsDeleting(true)
+    try {
+      const result = await deleteCelebrity(pendingDelete.id)
+      if (!result.success) throw new Error(result.message)
+      setCelebrities((prev) => prev.filter((c) => c.id !== pendingDelete.id))
+      toast.success(result.message || 'Celebrity deleted')
+      setPendingDelete(null)
+    } catch (err) {
+      console.error(err)
+      toast.error(err instanceof Error ? err.message : 'Failed to delete celebrity')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  if (isLoading) return <div className="text-center mt-8">Loading...</div>
-  if (error) return <div className="text-center mt-8 text-red-500">{error}</div>
+  if (isLoading) {
+    return (
+      <div className="space-y-4 px-4">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    )
+  }
+
+  if (error) return <div className="px-4 text-center text-red-500">{error}</div>
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Delete Celebrity</h1>
-      {celebrities.length === 0 ? (
-        <p>No celebrities found.</p>
-      ) : (
-        <ul className="space-y-4">
-          {celebrities.map((celebrity) => (
-            <li key={celebrity.id} className="flex items-center justify-between bg-white p-4 rounded-lg shadow">
-              <div className="flex items-center">
-                <img src={celebrity.dp} alt={celebrity.name} className="w-12 h-12 rounded-full mr-4" />
-                <span className="font-semibold">{celebrity.name}</span>
-              </div>
-              <button
-                onClick={() => handleDelete(celebrity.id)}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="px-4 pb-16">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Delete Celebrity</h1>
+        <p className="text-sm text-gray-500">
+          Removing a celebrity cascades to every one of their posts.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            All celebrities{' '}
+            <span className="text-sm font-normal text-gray-500">({celebrities.length})</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              id="delete-celebrity-search"
+              placeholder="Search celebrity"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {filtered.length === 0 ? (
+            <p className="py-12 text-center text-sm text-gray-500">No celebrities found.</p>
+          ) : (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {filtered.map((celebrity) => (
+                <li
+                  key={celebrity.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={celebrity.dp}
+                      alt={celebrity.name}
+                      className="h-12 w-12 flex-shrink-0 rounded-full bg-gray-100 object-cover"
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-gray-900">{celebrity.name}</p>
+                      <p className="text-xs text-gray-400">#{celebrity.id}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPendingDelete(celebrity)}
+                    className="flex-shrink-0 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Delete {celebrity.name}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title={`Delete ${pendingDelete?.name ?? 'this celebrity'}?`}
+        description="Every post belonging to this celebrity will be deleted too. This cannot be undone."
+        confirmLabel="Delete celebrity"
+        isPending={isDeleting}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }

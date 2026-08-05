@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { FcGoogle } from 'react-icons/fc';
-import { FaGithub } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Playfair_Display, Inter } from 'next/font/google';
@@ -22,7 +21,6 @@ const inter = Inter({
 
 export default function SignInPage() {
     const [googleLoading, setGoogleLoading] = useState(false);
-    const [githubLoading, setGithubLoading] = useState(false);
 
     const handleGoogleSignIn = async () => {
         setGoogleLoading(true);
@@ -32,17 +30,6 @@ export default function SignInPage() {
             console.error('Google sign in failed', error);
         } finally {
             setGoogleLoading(false);
-        }
-    };
-
-    const handleGithubSignIn = async () => {
-        setGithubLoading(true);
-        try {
-            await signIn('github', { callbackUrl: '/' });
-        } catch (error) {
-            console.error('GitHub sign in failed', error);
-        } finally {
-            setGithubLoading(false);
         }
     };
 
@@ -121,22 +108,6 @@ export default function SignInPage() {
                                 <>
                                     <FcGoogle className="w-6 h-6" />
                                     <span>Sign In with Google</span>
-                                </>
-                            )}
-                        </Button>
-
-                        <Button
-                            variant="default" // Using default (usually black/primary) for contrast
-                            onClick={handleGithubSignIn}
-                            disabled={githubLoading}
-                            className="w-full h-14 text-base font-medium rounded-xl bg-black text-white hover:bg-gray-800 transition-all shadow-lg flex items-center justify-center gap-3"
-                        >
-                            {githubLoading ? (
-                                <span className="w-5 h-5 border-2 border-gray-500 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <FaGithub className="w-6 h-6" />
-                                    <span>Sign In with GitHub</span>
                                 </>
                             )}
                         </Button>

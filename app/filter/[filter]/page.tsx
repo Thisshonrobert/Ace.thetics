@@ -6,7 +6,7 @@ import React from 'react'
 const page = async({params}:{params:{filter:Gender}}) => {
   const posts = await GetGenderPosts(params.filter)
     return (
-    <div className='mt-[30%] md:mt-[15%] lg:mt-[9%]'>
+    <div className='pt-28 md:pt-32'>
       <div className="space-y-8">
       {posts.length > 0 ? (
         posts.map((post) => (

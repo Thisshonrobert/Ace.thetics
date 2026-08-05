@@ -1,6 +1,5 @@
 import { atom, selector } from 'recoil';
 
-
 export interface LikedPost {
   id: number;
   celebrityImages: string[];
@@ -17,8 +16,7 @@ export interface LikedPost {
   }[];
 }
 
-// Atom to store the fetched state
-
+/** Full post objects, used by the /liked page. */
 export const likedPostsState = atom<LikedPost[]>({
   key: 'likedPostsState',
   default: [],
@@ -26,7 +24,16 @@ export const likedPostsState = atom<LikedPost[]>({
 
 export const likedPostsSelector = selector({
   key: 'likedPostsSelector',
-  get: ({ get }) => {
-    return get(likedPostsState);
-  },
+  get: ({ get }) => get(likedPostsState),
+});
+
+/**
+ * Just the ids the signed-in user has liked. Shared by every PostComponent on
+ * screen so the feed makes one request instead of one per card.
+ * `null` means "not fetched yet" and is what keeps the heart from flashing
+ * empty-then-filled on load.
+ */
+export const likedPostIdsState = atom<number[] | null>({
+  key: 'likedPostIdsState',
+  default: null,
 });

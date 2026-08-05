@@ -3,11 +3,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/prisma"
 import GoogleProvider from 'next-auth/providers/google';
 
-
-import GitHubProvider from 'next-auth/providers/github';
-
-// const isLocalhost = process.env.NODE_ENV === 'development'
-// const baseUrl = isLocalhost ? 'http://localhost:3000' : 'https://ace-thetics.vercel.app'
 export default {
   pages: {
     signIn: '/auth/signin',
@@ -16,10 +11,6 @@ export default {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
     }),
   ],
   adapter: PrismaAdapter(prisma),

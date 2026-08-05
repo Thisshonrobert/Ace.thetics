@@ -10,8 +10,14 @@
 .acethetics-heading {
   font-family: 'Sorts Mill Goudy', serif;
   text-transform: uppercase;
-  letter-spacing: 0.4em; /* Adjust this value to increase or decrease the space between letters */
+  letter-spacing: 0.4em;
   font-weight: normal;
+  /* `letter-spacing` also appends a gap AFTER the final letter, so the text box
+     is 0.4em wider than the glyphs. Centring that box leaves the word looking
+     shifted left. Pulling the same amount off the right edge makes the visible
+     letters sit dead centre. */
+  margin-right: -0.4em;
+  white-space: nowrap;
 }
 /* Add smooth scrolling behavior */
 html {

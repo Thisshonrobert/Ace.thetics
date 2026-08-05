@@ -1,80 +1,83 @@
 'use server'
-import { prisma } from '@/prisma'
-import { revalidatePath } from 'next/cache';
 
+import { prisma } from '@/prisma'
+import { revalidatePath } from 'next/cache'
+import { isAdmin } from '@/auth'
+
+/**
+ * Server actions are publicly reachable endpoints — being imported only by an
+ * admin page does not protect them. Both destructive actions below were
+ * callable by anyone who knew the action id.
+ */
+const DENIED = { success: false as const, message: 'Unauthorized' }
 
 export async function deletePost(postId: number) {
+  if (!(await isAdmin())) return DENIED
+
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      // Delete all PostProduct entries related to this post
-      await tx.postProduct.deleteMany({
-        where: { postId: postId }
-      })
-
-      // Delete the post
-      await tx.post.delete({
-        where: { id: postId }
-      })
-
-      return { success: true, message: 'Post and related products deleted successfully' }
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { Celebrity: { select: { name: true } } },
     })
-    revalidatePath('/');
-    return result
+    if (!post) {
+      return { success: false, message: 'Post not found' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.postProduct.deleteMany({ where: { postId } })
+      await tx.post.delete({ where: { id: postId } })
+      // Products left attached to nothing would otherwise linger in the
+      // catalogue and keep showing up in the "more from" rails.
+      await tx.product.deleteMany({ where: { PostProduct: { none: {} } } })
+    })
+
+    revalidatePath('/')
+    revalidatePath(`/celebrity/${encodeURIComponent(post.Celebrity.name)}`)
+
+    return { success: true, message: 'Post and related products deleted successfully' }
   } catch (error) {
     console.error('Error deleting post:', error)
     return { success: false, message: 'Failed to delete post and related products' }
-  } finally {
-    await prisma.$disconnect()
   }
+  // No `prisma.$disconnect()` here: the client is a long-lived singleton, and
+  // tearing down its pool after every request caused intermittent
+  // "Engine is not yet connected" errors on the next call.
 }
-export async function deleteProductFromPost(postId: number, productId: number, deleteOrphanedProduct: boolean = false) {
+
+export async function deleteProductFromPost(
+  postId: number,
+  productId: number,
+  deleteOrphanedProduct: boolean = false
+) {
+  if (!(await isAdmin())) return DENIED
+
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Remove the association between the post and the product
       await tx.postProduct.deleteMany({
-        where: {
-          AND: [
-            { postId: postId },
-            { productId: productId }
-          ]
-        }
-      });
+        where: { postId, productId },
+      })
 
       if (deleteOrphanedProduct) {
-        // Check if the product is associated with any other posts
-        const productAssociations = await tx.postProduct.findMany({
-          where: { productId: productId }
-        });
-
-        // If the product is not associated with any other posts, delete it
-        if (productAssociations.length === 0) {
-          await tx.product.delete({
-            where: { id: productId }
-          });
-          return { success: true, message: 'Product removed from post and deleted successfully' };
+        const remaining = await tx.postProduct.count({ where: { productId } })
+        if (remaining === 0) {
+          await tx.product.delete({ where: { id: productId } })
+          return { success: true, message: 'Product removed from post and deleted successfully' }
         }
       }
 
-      return { success: true, message: 'Product removed from post successfully' };
-    });
-    try {
-      const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
-        method: 'POST',
-      });
+      return { success: true, message: 'Product removed from post successfully' }
+    })
 
-      if (!revalidateResponse.ok) {
-        const errorData = await revalidateResponse.json();
-        console.error('Revalidation failed:', errorData);
-      }
-    } catch (error) {
-      console.error('Error during revalidation fetch:', error);
-    }
+    // Direct revalidation instead of a self-`fetch` to /api/revalidate, which
+    // depended on NEXT_PUBLIC_APP_URL and a shared secret being set correctly
+    // and silently no-opped when they weren't.
+    revalidatePath('/')
+    revalidatePath(`/post/${postId}`)
+    revalidatePath(`/product/${productId}`)
 
-    return result;
+    return result
   } catch (error) {
-    console.error('Error removing product from post:', error);
-    return { success: false, message: 'Failed to remove product from post' };
-  } finally {
-    await prisma.$disconnect();
+    console.error('Error removing product from post:', error)
+    return { success: false, message: 'Failed to remove product from post' }
   }
 }

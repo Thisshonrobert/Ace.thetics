@@ -1,236 +1,153 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { ImageKitProvider } from "imagekitio-next";
+import { Check, Loader2, Plus, Search, Trash2, UserPlus } from 'lucide-react';
+
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ImageField, ImageGalleryField } from '@/components/admin/ImageField';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { shops } from '@/constants/shop';
+import {
+  COUNTRIES,
+  GENDERS,
+  IMAGE_FOLDERS,
+  PRODUCT_CATEGORIES,
+  PROFESSIONS,
+  sanitizeUrl,
+  titleCase,
+} from '@/constants/taxonomy';
 
-
-const urlEndpoint = process.env.NEXT_PUBLIC_URL_ENDPOINT;
-const publicKey = process.env.NEXT_PUBLIC_PUBLIC_KEY;
-
-enum Gender {
-  Men = 'men',
-  Women = 'women',
-  Kids = 'kids',
-}
-
-export enum Profession {
-  Actor = 'actor',
-  Actress = 'actress',
-  Artist = 'artist',
-  Sports = 'sports',
-  Other = 'other',
-}
-
-export const topCountries = [
-  "United States", "China", "India", "Brazil", "Russia", "United Kingdom", "France", "Germany", 
-  "Japan", "Canada", "South Korea", "Italy", "Australia", "Spain", "Mexico", "Indonesia", 
-  "Netherlands", "Saudi Arabia", "Turkey", "Switzerland", "Sweden", "Poland", "Belgium", 
-  "Norway", "Argentina"
-];
-
-interface Product {
+interface StagedProduct {
   brandName: string;
   seoName: string;
   category: string;
   shop: string;
   link: string;
   description: string;
-  image: File | null;
+  imageUrl: string;
 }
 
-interface ImageKitAuthResponse {
-  token: string;
-  expire: number;
-  signature: string;
-}
-
-const initialCategories = [
-  "shirt", "pant", "suits", "t-shirts", "jeans", "trousers", "chinos",
-  "blazers", "jackets", "ethnic wear", "activewear", "shorts",
-  "footwear", "eyewear", "accessories", "skirt", "tops", "blouses",
-  "skirts",  "leggings", "sarees"
-];
-
-const sanitizeUrl = (url: string) => {
-  // Trim whitespace and remove malformed/duplicate protocols (e.g., "https//", "https://https://")
-  let cleanUrl = url.trim();
-  // Remove any leading correct or malformed protocol occurrences
-  cleanUrl = cleanUrl.replace(/^((https?:\/\/)+|https?\/\/)/i, '');
-  // Optionally strip leading www.
-  cleanUrl = cleanUrl.replace(/^www\./i, '');
-  return cleanUrl;
-}
+const emptyProduct = (): StagedProduct => ({
+  brandName: '',
+  seoName: '',
+  category: '',
+  shop: '',
+  link: '',
+  description: '',
+  imageUrl: '',
+});
 
 export default function AdminPageClient() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const [celebName, setCelebName] = useState('');
+  const [socialId, setSocialId] = useState('');
+  const [gender, setGender] = useState('');
+  const [profession, setProfession] = useState('');
+  const [country, setCountry] = useState('');
+  const [dpImage, setDpImage] = useState('');
+  const [celebImages, setCelebImages] = useState<string[]>([]);
+  const [products, setProducts] = useState<StagedProduct[]>([]);
+  const [currentProduct, setCurrentProduct] = useState<StagedProduct>(emptyProduct());
 
-  const [formData, setFormData] = useState({
-    gender: "",
-    celebName: "",
-    socialId: "",
-    celebImages: [] as File[],
-    dpImage: null as File | null,
-    celebExists: false,
-    products: [] as Product[],
-    profession: "",
-    country: "",
-  });
+  /** `null` = not checked yet, so the form can ask before revealing the rest. */
+  const [celebExists, setCelebExists] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categories, setCategories] = useState<string[]>([...PRODUCT_CATEGORIES]);
+  const [newCategory, setNewCategory] = useState('');
+  const [showClearDb, setShowClearDb] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
 
-  const [currentProduct, setCurrentProduct] = useState<Product>({
-    brandName: '',
-    seoName: '',
-    category: '',
-    shop: '',
-    link: '',
-    description: '',
-    image: null,
-  });
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [categories, setCategories] = useState<string[]>(initialCategories);
-  const [newCategory, setNewCategory] = useState<string>('');
-  const [isAddingCategory, setIsAddingCategory] = useState<boolean>(false);
-
-  //future upgrade
-  // const [outfitImageUrl, setOutfitImageUrl] = useState<string>('');
-  // const [outfitApiResult, setOutfitApiResult] = useState<any>(null);
-  // const [isFindingOutfit, setIsFindingOutfit] = useState<boolean>(false);
-  
-
-  // useEffect(() => {
-  //   if (status === "loading") return;
-  //   console.log("Session:", session); // Log session data
-  //   console.log("Status:", status); 
-
-  //   if (!session || (session.user?.email !== process.env.NEXT_PUBLIC_ADMIN_EMAIL )) {
-  //     window.alert("not a admin");
-  //     router.push('/');
-  //   }
-  // }, [session, status, router]);
-  
-  const authenticator = async (): Promise<ImageKitAuthResponse> => {
-    try {
-      const { data } = await axios.get<ImageKitAuthResponse>("/api/imagekit-auth");
-      return data;
-    } catch (error) {
-      console.error("Authentication request failed:", error);
-      toast.error("Failed to get ImageKit authentication");
-      throw error;
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    if (name === 'socialId') {
-      const sanitizedValue = sanitizeUrl(value);
-      setFormData(prev => ({ ...prev, [name]: sanitizedValue }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'dpImage' | 'celebImages') => {
-    const files = e.target.files;
-    if (files) {
-      if (field === 'dpImage') {
-        setFormData(prev => ({ ...prev, [field]: files[0] }));
-      } else {
-        setFormData(prev => ({ ...prev, [field]: [...prev.celebImages, ...Array.from(files)] }));
-      }
-    }
+  const resetForm = () => {
+    setCelebName('');
+    setSocialId('');
+    setGender('');
+    setProfession('');
+    setCountry('');
+    setDpImage('');
+    setCelebImages([]);
+    setProducts([]);
+    setCurrentProduct(emptyProduct());
+    setCelebExists(null);
   };
 
   const handleCheck = async () => {
-    setIsLoading(true);
+    if (!celebName.trim()) {
+      toast.error('Enter a celebrity name first');
+      return;
+    }
+    setIsChecking(true);
     try {
-      const response = await axios.get(`/api/admin/check-celebrity?name=${encodeURIComponent(formData.celebName)}`);
-      setFormData(prev => ({ ...prev, celebExists: response.data.exists }));
-      toast.success(response.data.exists ? 'Celebrity found!' : 'New celebrity');
+      const response = await axios.get(
+        `/api/admin/check-celebrity?name=${encodeURIComponent(celebName.trim())}`
+      );
+      setCelebExists(response.data.exists);
+      toast.success(
+        response.data.exists
+          ? 'Existing celebrity — only the new post is needed'
+          : 'New celebrity — fill in their profile below'
+      );
     } catch (error) {
       console.error('Error checking celebrity:', error);
       toast.error('Failed to check celebrity. Please try again.');
+    } finally {
+      setIsChecking(false);
     }
-    setIsLoading(false);
   };
 
   const handleAddProduct = () => {
-    if (currentProduct.image) {
-      setFormData(prev => ({ ...prev, products: [...prev.products, currentProduct] }));
-      setCurrentProduct({
-        brandName: '',
-        seoName: '',
-        category: '',
-        shop: '',
-        link: '',
-        description: '',
-        image: null,
-      });
-      toast.success('Product added successfully');
-    } else {
-      toast.error('Please upload a product image');
+    if (!currentProduct.imageUrl) {
+      toast.error('Upload a product image');
+      return;
     }
-  };
-
-  const uploadImage = async (files: File[], folder: string) => {
-    try {
-      const formData = new FormData();
-      
-      files.forEach(file => {
-        formData.append("file", file);
-      });
-      formData.append("folder", folder);
-
-      const response = await axios.post("/api/imagekit-upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      if (files.length === 1) {
-        return response.data[0].url;
-      }
-      return response.data.map((result: any) => result.url);
-    } catch (error) {
-      console.error("Error uploading images:", error);
-      toast.error("Failed to upload images");
-      throw new Error("Image upload failed");
+    if (!currentProduct.brandName.trim()) {
+      toast.error('Product needs a brand name');
+      return;
     }
+    setProducts((prev) => [...prev, currentProduct]);
+    setCurrentProduct(emptyProduct());
+    toast.success('Product added');
   };
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+
+    if (celebExists === null) {
+      toast.error('Check the celebrity name first');
+      return;
+    }
+    if (celebImages.length === 0) {
+      toast.error('Add at least one celebrity image');
+      return;
+    }
+    if (products.length === 0) {
+      toast.error('Add at least one product');
+      return;
+    }
+    if (!celebExists && !dpImage) {
+      toast.error('A new celebrity needs a profile picture');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      let dpImageUrl = "";
-      if (formData.dpImage) {
-        dpImageUrl = await uploadImage([formData.dpImage], "/dp");
-      }
-
-      let celebImageUrls: string[] = [];
-      if (formData.celebImages.length > 0) {
-        celebImageUrls = await uploadImage(formData.celebImages, "/celebrities");
-      }
-
-      const productImageUrls = await Promise.all(
-        formData.products.map(async (product) => {
-          if (!product.image) throw new Error("Product image is required");
-          const imageUrl = await uploadImage([product.image], "/products");
-          return { ...product, imageUrl };
-        })
-      );
-
       const payload = {
-        name: formData.celebName,
-        celebImages: [celebImageUrls],
-        products: productImageUrls.map((product) => ({
+        name: celebName.trim(),
+        // Flat array. This used to be `[celebImageUrls]` — a nested array that
+        // Prisma rejected whenever more than one image was selected.
+        celebImages,
+        products: products.map((product) => ({
           brandName: product.brandName,
           seoName: product.seoName,
           category: product.category,
@@ -239,378 +156,437 @@ export default function AdminPageClient() {
           description: product.description,
           imageUrl: product.imageUrl,
         })),
-        ...(formData.celebExists ? {} : {
-          socialId: formData.socialId,
-          gender: formData.gender as Gender,
-          dpImage: dpImageUrl,
-          profession: formData.profession as Profession,
-          country: formData.country,
-        }),
+        ...(celebExists
+          ? {}
+          : {
+              socialId: sanitizeUrl(socialId),
+              gender,
+              dpImage,
+              profession,
+              country,
+            }),
       };
 
       const response = await axios.post('/api/admin/create-celebrity', payload);
 
       if (response.status === 200 || response.status === 201) {
-        toast.success(formData.celebExists ? 'Celebrity updated successfully!' : 'Celebrity and products added successfully!');
-        setFormData({
-          gender: "",
-          celebName: "",
-          socialId: "",
-          celebImages: [],
-          dpImage: null,
-          celebExists: false,
-          products: [],
-          profession: "",
-          country: "",
-        });
+        toast.success(
+          celebExists ? 'Post added to existing celebrity!' : 'Celebrity and post created!'
+        );
+        resetForm();
       }
     } catch (error) {
       console.error('Error posting celebrity:', error);
-      toast.error('Failed to add/update celebrity and products. Please try again.');
-    }
-    setIsLoading(false);
-  };
-
-  const handleAddCategory = () => {
-    if (newCategory && !categories.includes(newCategory.toLowerCase())) {
-      setCategories(prev => [...prev, newCategory.toLowerCase()]);
-      setNewCategory('');
-      setIsAddingCategory(false);
+      const message = axios.isAxiosError(error)
+        ? error.response?.data?.error
+        : undefined;
+      toast.error(message || 'Failed to save. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  //future upgrade
-  // const handleFindOutfit = async () => {
-  //   if (!outfitImageUrl) {
-  //     toast.error('Please enter an image URL.');
-  //     return;
-  //   }
-  //   setIsFindingOutfit(true);
-  //   try {
-  //     const response = await axios.post('/api/automations/find-outfit', { imageUrl: outfitImageUrl });
-  //     setOutfitApiResult(response.data);
-  //     toast.success('Outfit analysis complete!');
-  //   } catch (error) {
-  //     console.error('Error finding outfit:', error);
-  //     toast.error('Failed to find outfit. Please check the console for details.');
-  //   }
-  //   setIsFindingOutfit(false);
-  // };
 
   return (
-    <ImageKitProvider 
-      publicKey={publicKey!} 
-      urlEndpoint={urlEndpoint!} 
-      authenticator={authenticator}
-    >
-      <Card className="max-w-2xl mx-auto mt-8">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Admin Page</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePost} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="celebName">Celebrity Name</Label>
-              <Input 
-                id="celebName"
-                name="celebName"
-                onChange={handleInputChange} 
-                value={formData.celebName} 
-                placeholder="Celebrity name" 
-                required
-              />
-            </div>
-            <Button type="button" onClick={handleCheck} disabled={isLoading}>
-              {isLoading ? 'Checking...' : 'Check Celebrity'}
-            </Button>
-            
-            {!formData.celebExists && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="socialId">Social ID</Label>
-                  <Input 
-                    id="socialId"
-                    name="socialId"
-                    onChange={handleInputChange} 
-                    value={formData.socialId} 
-                    placeholder="Social ID" 
-                    required
-                  />
-                  {formData.socialId && (
-                    <p className="text-xs text-gray-500">
-                      Sanitized URL: {formData.socialId}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gender">Gender</Label>
-                  <Select name="gender" onValueChange={(value) => setFormData(prev => ({ ...prev, gender: value }))}>
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(Gender).map((g) => (
-                        <SelectItem key={g} value={g}>
-                          {g.charAt(0).toUpperCase() + g.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profession">Profession</Label>
-                  <Select name="profession" onValueChange={(value) => setFormData(prev => ({ ...prev, profession: value }))}>
-                    <SelectTrigger id="profession">
-                      <SelectValue placeholder="Select Profession" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.values(Profession).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p.charAt(0).toUpperCase() + p.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    placeholder="Search country"
-                    list="countries"
-                    autoComplete="country-name"
-                    required
-                  />
-                  <datalist id="countries">
-                    {topCountries.map((country) => (
-                      <option key={country} value={country} />
-                    ))}
-                  </datalist>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dpImage">Celebrity Profile Picture</Label>
-                  <Input
-                    id="dpImage"
-                    type="file"
-                    onChange={(e) => handleFileChange(e, 'dpImage')}
-                    accept="image/*"
-                    required
-                  />
-                </div>
-              </>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="celebImages">Celebrity Post Images (Multiple)</Label>
-              <Input
-                id="celebImages"
-                type="file"
-                onChange={(e) => handleFileChange(e, 'celebImages')}
-                accept="image/*"
-                multiple
-                required
-              />
-            </div>
-            {formData.celebImages.length > 0 && (
-              <div>
-                <h3 className="font-semibold">Selected Images:</h3>
-                <ul>
-                  {formData.celebImages.map((file, index) => (
-                    <li key={index}>{file.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            <h2 className="text-xl font-bold mt-8">Add Products</h2>
-            <div className="space-y-4">
-              <Input 
-                id='brandName'
-                onChange={(e) => setCurrentProduct({ ...currentProduct, brandName: e.target.value })} 
-                value={currentProduct.brandName} 
-                placeholder="Brand name" 
-              />
-              <Input 
-                id='description'
-                onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} 
-                value={currentProduct.description} 
-                placeholder="Description" 
-              />
-              <Input 
-                id='seoName'
-                onChange={(e) => setCurrentProduct({ ...currentProduct, seoName: e.target.value })} 
-                value={currentProduct.seoName} 
-                placeholder="SEO name" 
-              />
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <div className="flex items-center space-x-2">
-                  <Select name="category" onValueChange={(value) => setCurrentProduct({ ...currentProduct, category: value })}>
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" onClick={() => setIsAddingCategory(true)} variant="outline">
-                    +
-                  </Button>
-                </div>
-              </div>
+    <div className="px-4 pb-16">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">New Post</h1>
+        <p className="text-sm text-gray-500">
+          Look up the celebrity, upload the look, then attach the products they&apos;re wearing.
+        </p>
+      </div>
 
-              {isAddingCategory && (
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    placeholder="Add new category"
-                  />
-                  <Button type="button" onClick={handleAddCategory} variant="outline">
-                    Add
-                  </Button>
-                </div>
-              )}
-
-              <Input 
-                id='shop'
-                onChange={(e) => setCurrentProduct({ ...currentProduct, shop: e.target.value })} 
-                value={currentProduct.shop} 
-                placeholder="Shop" 
-              />
-              <Input 
-                id='link'
-                onChange={(e) => setCurrentProduct({ ...currentProduct, link: e.target.value })} 
-                value={currentProduct.link} 
-                placeholder="Link" 
-              />
-              <div className="space-y-2">
-                <Label htmlFor="productImage">Product Image</Label>
+      <form onSubmit={handlePost} className="space-y-6">
+        {/* ---------- Step 1: celebrity ---------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">1 · Celebrity</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="min-w-[240px] flex-1 space-y-1.5">
+                <Label htmlFor="celebName">Celebrity name</Label>
                 <Input
-                  id="productImage"
-                  type="file"
-                  onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.files?.[0] || null })}
-                  accept="image/*"
+                  id="celebName"
+                  value={celebName}
+                  onChange={(e) => {
+                    setCelebName(e.target.value);
+                    // Any edit invalidates the previous lookup.
+                    setCelebExists(null);
+                  }}
+                  placeholder="e.g. Samantha Ruth Prabhu"
+                  required
                 />
               </div>
-              <Button type="button" onClick={handleAddProduct}>Add Product</Button>
+              <Button type="button" onClick={handleCheck} disabled={isChecking} variant="outline">
+                {isChecking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Checking…
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" /> Check
+                  </>
+                )}
+              </Button>
             </div>
 
-            {formData.products.length > 0 && (
-              <div>
-                <h3 className="font-semibold">Added Products:</h3>
-                <ul>
-                  {formData.products.map((product, index) => (
-                    <li key={index}>
-                      {product.brandName} - {product.category}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {celebExists === true && (
+              <p className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+                <Check className="h-4 w-4" /> Found — this post will be added to their profile.
+              </p>
             )}
 
-            {formData.products.length > 0 && (
-              <Button type="submit" disabled={isLoading} className="mt-4">
-                {isLoading ? (formData.celebExists ? 'Updating...' : 'Posting...') : (formData.celebExists ? 'Update Celebrity and Products' : 'Post Celebrity and Products')}
-              </Button>
-            )}
-          </form>
+            {celebExists === false && (
+              <div className="space-y-4 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/40 p-4">
+                <p className="flex items-center gap-2 text-sm font-medium text-indigo-900">
+                  <UserPlus className="h-4 w-4" /> New celebrity — complete their profile
+                </p>
 
-{/* future upgrade */}
-          {/* <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Outfit Finder</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="outfitImageUrl">Image URL</Label>
-                <Input
-                  id="outfitImageUrl"
-                  name="outfitImageUrl"
-                  onChange={(e) => setOutfitImageUrl(e.target.value)}
-                  placeholder="Enter image URL to find outfit"
-                />
-              </div>
-              <Button type="button" onClick={handleFindOutfit} disabled={isFindingOutfit} className="mt-2">
-                {isFindingOutfit ? 'Finding...' : 'Find Outfit'}
-              </Button>
-              {outfitApiResult && (
-                <div className="mt-4">
-                  <h3 className="font-semibold">Vision API Result:</h3>
-                  <div className="p-4 bg-gray-100 rounded-md overflow-x-auto">
-                    {outfitApiResult.bestGuessLabels && outfitApiResult.bestGuessLabels.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold">Best Guess:</h4>
-                        <p>{outfitApiResult.bestGuessLabels[0].label}</p>
-                      </div>
-                    )}
+                <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+                  <ImageField
+                    label="Profile picture"
+                    value={dpImage}
+                    folder={IMAGE_FOLDERS.dp}
+                    onChange={setDpImage}
+                    onRemove={() => setDpImage('')}
+                  />
 
-                    {outfitApiResult.webEntities && outfitApiResult.webEntities.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold">Web Entities:</h4>
-                        <ul>
-                          {outfitApiResult.webEntities.map((entity: any, index: number) => (
-                            <li key={index}>
-                              {entity.description} (Score: {entity.score.toFixed(2)})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="socialId">Social media handle / URL</Label>
+                      <Input
+                        id="socialId"
+                        value={socialId}
+                        onChange={(e) => setSocialId(e.target.value)}
+                        placeholder="instagram.com/username"
+                        required
+                      />
+                      {socialId && (
+                        <p className="truncate text-xs text-gray-500">
+                          Saved as: {sanitizeUrl(socialId)}
+                        </p>
+                      )}
+                    </div>
 
-                    {outfitApiResult.pagesWithMatchingImages && outfitApiResult.pagesWithMatchingImages.length > 0 && (
-                      <div className="mb-4">
-                        <h4 className="font-semibold">Pages with Matching Images:</h4>
-                        <ul>
-                          {outfitApiResult.pagesWithMatchingImages.map((page: any, index: number) => (
-                            <li key={index}>
-                              <a href={page.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                                {page.url}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="gender">Gender</Label>
+                        <Select value={gender} onValueChange={setGender}>
+                          <SelectTrigger id="gender">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {GENDERS.map((g) => (
+                              <SelectItem key={g} value={g}>
+                                {titleCase(g)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="profession">Profession</Label>
+                        <Select value={profession} onValueChange={setProfession}>
+                          <SelectTrigger id="profession">
+                            <SelectValue placeholder="Select profession" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROFESSIONS.map((p) => (
+                              <SelectItem key={p} value={p}>
+                                {titleCase(p)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="country">Country</Label>
+                      <Input
+                        id="country"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        list="admin-countries"
+                        autoComplete="country-name"
+                        placeholder="Search country"
+                        required
+                      />
+                      <datalist id="admin-countries">
+                        {COUNTRIES.map((c) => (
+                          <option key={c} value={c} />
+                        ))}
+                      </datalist>
+                    </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card> */}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-          <div className="flex flex-col space-y-4 mt-4">
-            <Button onClick={() => router.push('/admin/delete-post')} className="bg-red-500 text-white">
-              Delete Post
-            </Button>
-            <Button onClick={() => router.push('/admin/delete-celebrity')} className="bg-red-500 text-white">
-              Delete Celebrity
-            </Button>
-            <Button onClick={() => router.push('/admin/update-post')} className="bg-red-500 text-white">
-              Update Post
-            </Button>
-            <Button onClick={() => router.push('/admin/update-celebrity')} className="bg-red-500 text-white">
-              Update Celebrity
-            </Button>
-            <Button onClick={async() => {
-              if (window.confirm("Are you sure you want to clear the database? This action cannot be undone.")) {
-                await axios.post('/api/admin/clearDB')
-              }
-            }} className="bg-red-500 text-white">
-              clear db
-            </Button>
-            
-           
-          </div>
+        {/* ---------- Step 2: post images ---------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">2 · Post images</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImageGalleryField
+              values={celebImages}
+              folder={IMAGE_FOLDERS.celebrities}
+              onChange={setCelebImages}
+              emptyHint="Upload the outfit photos for this post."
+            />
+          </CardContent>
+        </Card>
+
+        {/* ---------- Step 3: products ---------- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">
+              3 · Products{' '}
+              <span className="text-sm font-normal text-gray-500">({products.length} added)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {products.length > 0 && (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {products.map((product, index) => (
+                  <li
+                    key={index}
+                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={product.imageUrl}
+                      alt={product.brandName}
+                      className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-50 object-contain"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-gray-900">{product.brandName}</p>
+                      <p className="truncate text-xs text-gray-500">
+                        {product.category || 'uncategorised'} · {product.shop || 'no shop'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setProducts((prev) => prev.filter((_, i) => i !== index))}
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove {product.brandName}</span>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="grid gap-5 rounded-xl border border-dashed border-gray-300 p-4 md:grid-cols-[180px_1fr]">
+              <ImageField
+                label="Product image"
+                value={currentProduct.imageUrl}
+                folder={IMAGE_FOLDERS.products}
+                onChange={(url) => setCurrentProduct({ ...currentProduct, imageUrl: url })}
+                onRemove={() => setCurrentProduct({ ...currentProduct, imageUrl: '' })}
+              />
+
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="brandName">Brand name</Label>
+                    <Input
+                      id="brandName"
+                      value={currentProduct.brandName}
+                      onChange={(e) =>
+                        setCurrentProduct({ ...currentProduct, brandName: e.target.value })
+                      }
+                      placeholder="e.g. Louis Philippe"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="shop">Shop</Label>
+                    <Input
+                      id="shop"
+                      value={currentProduct.shop}
+                      onChange={(e) =>
+                        setCurrentProduct({ ...currentProduct, shop: e.target.value.toLowerCase() })
+                      }
+                      list="admin-shops"
+                      placeholder="e.g. amazon"
+                    />
+                    <datalist id="admin-shops">
+                      {shops.map((shop) => (
+                        <option key={shop.name} value={shop.name} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="seoName">Product name (SEO)</Label>
+                  <Input
+                    id="seoName"
+                    value={currentProduct.seoName}
+                    onChange={(e) =>
+                      setCurrentProduct({ ...currentProduct, seoName: e.target.value })
+                    }
+                    placeholder="Full product title shown to visitors"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="description">Description</Label>
+                  <textarea
+                    id="description"
+                    rows={2}
+                    value={currentProduct.description}
+                    onChange={(e) =>
+                      setCurrentProduct({ ...currentProduct, description: e.target.value })
+                    }
+                    placeholder="Elevate your style, embrace the trend!"
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="category">Category</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={currentProduct.category}
+                        onValueChange={(value) =>
+                          setCurrentProduct({ ...currentProduct, category: value })
+                        }
+                      >
+                        <SelectTrigger id="category">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {titleCase(category)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="link">Buy link</Label>
+                    <Input
+                      id="link"
+                      value={currentProduct.link}
+                      onChange={(e) =>
+                        setCurrentProduct({ ...currentProduct, link: e.target.value })
+                      }
+                      placeholder="amazon.in/dp/XXXX"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="newCategory">New category</Label>
+                    <Input
+                      id="newCategory"
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value)}
+                      placeholder="e.g. hoodies"
+                      className="w-48"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const value = newCategory.trim().toLowerCase();
+                      if (!value) return;
+                      if (categories.includes(value)) {
+                        toast.info('That category already exists');
+                        return;
+                      }
+                      setCategories((prev) => [...prev, value]);
+                      setCurrentProduct((prev) => ({ ...prev, category: value }));
+                      setNewCategory('');
+                      toast.success(`“${value}” added`);
+                    }}
+                  >
+                    Add category
+                  </Button>
+
+                  <Button type="button" onClick={handleAddProduct} className="ml-auto">
+                    <Plus className="mr-2 h-4 w-4" /> Add product
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="sticky bottom-0 -mx-4 flex items-center justify-end gap-3 border-t bg-white/95 px-4 py-3 backdrop-blur">
+          <Button type="button" variant="outline" onClick={resetForm}>
+            Reset
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publishing…
+              </>
+            ) : celebExists ? (
+              'Publish post'
+            ) : (
+              'Create celebrity & publish'
+            )}
+          </Button>
+        </div>
+      </form>
+
+      {/* Kept from the old dashboard, but moved out of the row of ordinary
+          buttons where it sat one slot away from "Update Post". */}
+      <Card className="mt-10 border-red-200">
+        <CardHeader>
+          <CardTitle className="text-base text-red-700">Danger zone</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-gray-600">
+            Wipe every celebrity, post and product from the database.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => setShowClearDb(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Clear database
+          </Button>
         </CardContent>
       </Card>
-    </ImageKitProvider>
+
+      <ConfirmDialog
+        open={showClearDb}
+        onOpenChange={setShowClearDb}
+        title="Clear the entire database?"
+        description="Every celebrity, post and product will be permanently removed. This cannot be undone."
+        confirmLabel="Yes, wipe everything"
+        isPending={isClearing}
+        onConfirm={async () => {
+          setIsClearing(true);
+          try {
+            await axios.post('/api/admin/clearDB');
+            toast.success('Database cleared');
+            setShowClearDb(false);
+          } catch (error) {
+            console.error('Failed to clear database:', error);
+            toast.error('Failed to clear the database');
+          } finally {
+            setIsClearing(false);
+          }
+        }}
+      />
+    </div>
   );
 }

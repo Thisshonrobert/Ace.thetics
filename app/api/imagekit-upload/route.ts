@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ImageKit from "imagekit";
+import { isAdmin } from '@/auth';
 import { withMetrics } from '../metrics/wrapper';
 
 const imagekit = new ImageKit({
@@ -8,52 +9,56 @@ const imagekit = new ImageKit({
   urlEndpoint: process.env.NEXT_PUBLIC_URL_ENDPOINT!
 });
 
+const MAX_FILE_BYTES = 10 * 1024 * 1024; // ImageKit's free-tier per-file ceiling
+const ALLOWED_FOLDERS = ['/dp', '/celebrities', '/products'];
+
 async function postHandler(request: NextRequest) {
-  console.log('Starting image upload process');
+  // This endpoint burns the site's ImageKit quota, so it must not be open to
+  // anonymous callers.
+  if (!(await isAdmin())) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const formData = await request.formData();
     const files = formData.getAll('file');
-    const folder = formData.get('folder') as string || '/';
+    const folder = (formData.get('folder') as string) || '/';
 
-    if (!files || files.length === 0) {
-      console.log('No files received');
+    if (files.length === 0) {
       return NextResponse.json({ error: 'Files are required' }, { status: 400 });
     }
+    if (!ALLOWED_FOLDERS.includes(folder)) {
+      return NextResponse.json({ error: `Unsupported folder: ${folder}` }, { status: 400 });
+    }
 
-    console.log(`Processing ${files.length} files for upload`);
-
-    // Handle multiple files
     const uploadPromises = files.map(async (file: any) => {
       if (!(file instanceof File)) {
         throw new Error('Invalid file type');
       }
+      if (!file.type.startsWith('image/')) {
+        throw new Error(`${file.name} is not an image`);
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        throw new Error(`${file.name} is larger than 10MB`);
+      }
 
-      // Convert File to Buffer
       const buffer = Buffer.from(await file.arrayBuffer());
 
-      console.log(`Uploading file: ${file.name}`);
-
-      // Upload to ImageKit using the SDK
-      const result = await imagekit.upload({
+      return imagekit.upload({
         file: buffer,
         fileName: file.name,
-        folder: folder,
+        folder,
         useUniqueFileName: true,
       });
-
-      console.log(`Successfully uploaded: ${file.name}`);
-      return result;
     });
 
-    // Wait for all uploads to complete
     const results = await Promise.all(uploadPromises);
-    console.log('All files uploaded successfully');
 
     return NextResponse.json(results);
   } catch (error) {
     console.error('Error uploading to ImageKit:', error);
     return NextResponse.json(
-      { error: 'Failed to upload images' },
+      { error: error instanceof Error ? error.message : 'Failed to upload images' },
       { status: 500 }
     );
   }

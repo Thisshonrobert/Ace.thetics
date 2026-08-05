@@ -32,8 +32,21 @@ async function postHandler(req: NextRequest) {
       products
     } = await req.json();
 
-    if (!name || !celebImages || !products || !Array.isArray(celebImages) || !Array.isArray(products)) {
+    if (!name || !Array.isArray(celebImages) || !Array.isArray(products)) {
       return NextResponse.json({ error: 'Missing required fields or invalid format' }, { status: 400 });
+    }
+
+    // The client used to send `[celebImageUrls]`, which nested an array inside
+    // an array whenever more than one image was picked and made Prisma reject
+    // the whole post. Assert the flat shape rather than failing deeper down.
+    if (celebImages.length === 0 || celebImages.some((url) => typeof url !== 'string')) {
+      return NextResponse.json(
+        { error: 'celebImages must be a non-empty array of image URLs' },
+        { status: 400 }
+      );
+    }
+    if (products.length === 0) {
+      return NextResponse.json({ error: 'At least one product is required' }, { status: 400 });
     }
 
     let celebrity = await prisma.celebrity.findFirst({
@@ -95,24 +108,27 @@ async function postHandler(req: NextRequest) {
         },
       },
     });
-    try {
-      console.log('Sending Telegram notification via zap...');
-      await axios.post(
-        " https://573aa6cfe4fd.ngrok-free.app/hooks/catch/1/b2d9646b-ea94-42cf-8b9a-d059ef4901a4",
-        {
-          "channelUserName": "acetheticsupdates",
-          "botToken": "8403896095:AAHjSnjTUB3s-YOZ1fwMGwU0fpSKJ9cexSw",
-          "message": `New celebrity added: ${celebrity.name}. Check it out at ${process.env.NEXT_PUBLIC_APP_URL}/celebrity/${celebrity.id}`,
-        },
-        {
-          headers: {
-            "X-ZAP-SECRET": process.env.ZAP_SECRET!,
-          }
-        }
-      );
+    // The webhook URL and Telegram bot token used to be hardcoded here, which
+    // means they are in git history and should be rotated. They now come from
+    // the environment, and the notification is skipped when unconfigured.
+    const zapWebhookUrl = process.env.ZAP_WEBHOOK_URL;
+    const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN;
+    const telegramChannel = process.env.TELEGRAM_CHANNEL || 'acetheticsupdates';
 
-    } catch (error) {
-      console.error('Error sending Telegram notification: via zap', error);
+    if (zapWebhookUrl && telegramBotToken) {
+      try {
+        await axios.post(
+          zapWebhookUrl,
+          {
+            channelUserName: telegramChannel,
+            botToken: telegramBotToken,
+            message: `New celebrity added: ${celebrity.name}. Check it out at ${process.env.NEXT_PUBLIC_APP_URL}/celebrity/${encodeURIComponent(celebrity.name)}`,
+          },
+          { headers: { 'X-ZAP-SECRET': process.env.ZAP_SECRET ?? '' } }
+        );
+      } catch (error) {
+        console.error('Error sending Telegram notification via zap:', error);
+      }
     }
     // Revalidate the homepage cache server-side. Prefer direct `revalidatePath` so
     // we don't rely on an external URL or public env var. If it fails, fall back

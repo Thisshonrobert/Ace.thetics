@@ -1,37 +1,41 @@
 'use server'
+
 import { prisma } from '@/prisma'
+import { revalidatePath } from 'next/cache'
+import { isAdmin } from '@/auth'
 
 export async function deleteCelebrity(celebrityId: number) {
+  if (!(await isAdmin())) {
+    return { success: false, message: 'Unauthorized' }
+  }
+
   try {
-    const result = await prisma.$transaction(async (tx) => {
-      // Delete the celebrity. Due to onDelete: Cascade on Post.Celebrity and PostProduct.Post,
-      // this removes the celebrity's posts and their join rows automatically.
+    const celebrity = await prisma.celebrity.findUnique({
+      where: { id: celebrityId },
+      select: { name: true },
+    })
+    if (!celebrity) {
+      return { success: false, message: 'Celebrity not found' }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Post.Celebrity and PostProduct.Post both cascade, so deleting the
+      // celebrity takes their posts and join rows with it.
       await tx.celebrity.delete({ where: { id: celebrityId } })
 
-      // Cleanup: delete any products that are no longer associated with any posts
-      await tx.product.deleteMany({
-        where: { PostProduct: { none: {} } },
-      })
-
-      try {
-        const revalidateResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/revalidate?secret=${process.env.REVALIDATION_SECRET}`, {
-          method: 'POST',
-        })
-
-        if (!revalidateResponse.ok) {
-          const errorData = await revalidateResponse.json()
-          console.error('Revalidation failed:', errorData)
-        }
-      } catch (error) {
-        console.error('Error during revalidation fetch:', error)
-      }
-
-      return { success: true, message: 'Celebrity and related data deleted successfully' }
+      // Then sweep up products that are no longer on any post.
+      await tx.product.deleteMany({ where: { PostProduct: { none: {} } } })
     }, { timeout: 15000 })
 
-    return result
+    // Revalidation moved out of the transaction: it used to be an awaited
+    // `fetch` to /api/revalidate *inside* the transaction, holding a database
+    // transaction open for the duration of a network round-trip.
+    revalidatePath('/')
+    revalidatePath(`/celebrity/${encodeURIComponent(celebrity.name)}`)
+
+    return { success: true, message: 'Celebrity and related data deleted successfully' }
   } catch (error) {
     console.error('Error deleting celebrity:', error)
     return { success: false, message: 'Failed to delete celebrity and related data' }
-  } 
+  }
 }
