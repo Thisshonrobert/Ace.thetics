@@ -236,7 +236,7 @@ import { Button } from "@/components/ui/button";
 import emailjs from '@emailjs/browser';
 import { useSearchParams } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
-import axios, { AxiosRequestConfig } from "axios";
+import axios from "axios";
 import Image from 'next/image';
 import { Camera, Upload, X } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
@@ -330,34 +330,22 @@ export default  function VirtualTryOn({ params }: { params: { productId: string 
 
     setLoading(true);
     try {
-      const productImageResponse = await fetch(imageUrl);
-      if (!productImageResponse.ok) {
-        throw new Error('Failed to fetch product image');
-      }
-      const productImageBlob = await productImageResponse.blob();
-
+      // The product image is now fetched server-side by /api/virtual-tryon —
+      // this only sends its URL, not its bytes, and never touches the
+      // RapidAPI key (that call used to happen right here, in the browser).
       const formData = new FormData();
-      formData.append('clothing_image', productImageBlob);
-      formData.append('avatar_image',  userImage);
+      formData.append('imageUrl', imageUrl);
+      formData.append('avatar_image', userImage);
 
-      const options:AxiosRequestConfig<FormData>= {
-        method: 'POST',
-        url: 'https://try-on-diffusion.p.rapidapi.com/try-on-file',
-        headers: {
-          'x-rapidapi-key': '6e219b2afdmsh24636ae0e3024a9p10bcfbjsn8cca0eb9ee5c',
-          'x-rapidapi-host': 'try-on-diffusion.p.rapidapi.com',
-        },
-        data: formData,
-        responseType: "arraybuffer",
-      };
+      const response = await axios.post('/api/virtual-tryon', formData, {
+        responseType: 'arraybuffer',
+      });
 
-      const response = await axios.request(options);
-      
-     const imageBlob = new Blob([response.data], { type: "image/jpeg" });
-    const responseimageUrl = URL.createObjectURL(imageBlob);
-    
-    setResultUrl(responseimageUrl);
-      
+      const imageBlob = new Blob([response.data], { type: 'image/jpeg' });
+      const responseimageUrl = URL.createObjectURL(imageBlob);
+
+      setResultUrl(responseimageUrl);
+
       setLoading(false);
 
       toast({
