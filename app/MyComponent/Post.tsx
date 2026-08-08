@@ -177,8 +177,13 @@ export default function PostComponent({
         <div className="w-1/2 flex flex-col h-full">
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
+              {/* Plain `cursor-pointer`, not `hover:cursor-pointer`: Tailwind
+                  wraps hover variants in `@media (hover: hover) and
+                  (pointer: fine)`, so on touch-capable laptops the rule can
+                  fail to match and the cursor stays an arrow. The hover prefix
+                  bought nothing anyway — a cursor only shows on hover. */}
               <div
-                className="flex items-center hover:cursor-pointer"
+                className="flex items-center cursor-pointer"
                 onClick={() =>
                   router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)
                 }
@@ -243,7 +248,7 @@ export default function PostComponent({
               {sortedProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  className="flex items-center p-2 rounded-lg border hover:shadow-md hover:cursor-pointer"
+                  className="flex items-center p-2 rounded-lg border hover:shadow-md cursor-pointer"
                   onClick={() => handleProductClick(product)}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{
@@ -355,7 +360,7 @@ export default function PostComponent({
           />
           <div className="absolute bottom-0 left-0 right-0 top-[92%] p-4 z-30">
             <div className="flex items-center justify-between bg-white border rounded-xl mx-4 px-2 z-30">
-              <div className="flex items-center z-30" onClick={() =>
+              <div className="flex items-center z-30 cursor-pointer" onClick={() =>
                 router.push(`/celebrity/${encodeURIComponent(celebrityName)}`)
               }>
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 mr-2 border-2 border-white bg-gray-100">

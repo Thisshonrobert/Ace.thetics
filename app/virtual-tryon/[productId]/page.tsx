@@ -354,13 +354,28 @@ export default  function VirtualTryOn({ params }: { params: { productId: string 
       });
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      // The response is requested as an arraybuffer for the success case, so an
+      // error body arrives as raw bytes rather than parsed JSON. Decode it so
+      // the user sees the real reason ("quota exceeded", "took too long")
+      // instead of a blanket "please try again" that may never succeed.
+      let description = "Failed to process virtual try-on. Please try again.";
+      if (axios.isAxiosError(error) && error.response?.data) {
+        try {
+          const decoded = new TextDecoder().decode(error.response.data as ArrayBuffer);
+          const parsed = JSON.parse(decoded);
+          if (parsed?.error) description = parsed.error;
+        } catch {
+          // Non-JSON body (e.g. the platform's own HTML timeout page) — keep
+          // the generic message.
+        }
+      }
+
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to process virtual try-on. Please try again.",
+        description,
       });
-      sendErrorEmail(errorMessage);
+      sendErrorEmail(error instanceof Error ? error.message : 'An unknown error occurred');
       setLoading(false);
     }
   };

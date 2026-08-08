@@ -4,7 +4,22 @@ import { withMetrics } from '../metrics/wrapper';
 
 export const runtime = 'nodejs';
 
+/**
+ * Diffusion inference routinely takes 20–40s, well past Vercel's 10s default
+ * for serverless functions — which is what produced the 504 Gateway Timeout.
+ * 60s is the ceiling on the Hobby plan; raise this if you move to Pro.
+ *
+ * Note this constraint did not exist when the browser called RapidAPI
+ * directly: the fetch simply stayed open as long as it needed. It is the cost
+ * of proxying through a serverless function to keep the API key private.
+ */
+export const maxDuration = 60;
+
 const RAPIDAPI_HOST = 'try-on-diffusion.p.rapidapi.com';
+
+/** Leaves headroom under `maxDuration` so we can return a real error body. */
+const TRY_ON_TIMEOUT_MS = 50_000;
+const IMAGE_FETCH_TIMEOUT_MS = 10_000;
 
 /**
  * Proxies the virtual try-on request to RapidAPI.
@@ -44,7 +59,9 @@ async function postHandler(request: NextRequest) {
     // needs to send the URL, not the bytes, which halves the upload and keeps
     // this route the single place that talks to both the product CDN and
     // RapidAPI.
-    const productImageResponse = await fetch(productImageUrl);
+    const productImageResponse = await fetch(productImageUrl, {
+      signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
+    });
     if (!productImageResponse.ok) {
       return NextResponse.json({ error: 'Failed to fetch product image' }, { status: 502 });
     }
@@ -54,18 +71,42 @@ async function postHandler(request: NextRequest) {
     outgoing.append('clothing_image', clothingBlob, 'clothing.jpg');
     outgoing.append('avatar_image', avatarImage);
 
-    const tryOnResponse = await fetch(`https://${RAPIDAPI_HOST}/try-on-file`, {
-      method: 'POST',
-      headers: {
-        'x-rapidapi-key': apiKey,
-        'x-rapidapi-host': RAPIDAPI_HOST,
-      },
-      body: outgoing,
-    });
+    let tryOnResponse: Response;
+    try {
+      tryOnResponse = await fetch(`https://${RAPIDAPI_HOST}/try-on-file`, {
+        method: 'POST',
+        headers: {
+          'x-rapidapi-key': apiKey,
+          'x-rapidapi-host': RAPIDAPI_HOST,
+        },
+        body: outgoing,
+        // Abort just under the function's own limit. Without this the platform
+        // kills the function first and the browser gets an HTML 504 with no
+        // usable error body.
+        signal: AbortSignal.timeout(TRY_ON_TIMEOUT_MS),
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')) {
+        console.error('RapidAPI try-on timed out');
+        return NextResponse.json(
+          { error: 'The try-on service took too long to respond. Please try again.' },
+          { status: 504 }
+        );
+      }
+      throw error;
+    }
 
     if (!tryOnResponse.ok) {
       const detail = await tryOnResponse.text().catch(() => '');
       console.error('RapidAPI try-on failed:', tryOnResponse.status, detail);
+      // Surface rate limiting distinctly — on RapidAPI's free tier this is the
+      // most common non-transient failure and it is not worth retrying.
+      if (tryOnResponse.status === 429) {
+        return NextResponse.json(
+          { error: 'Try-on quota exceeded for now. Please try again later.' },
+          { status: 429 }
+        );
+      }
       return NextResponse.json({ error: 'Try-on generation failed' }, { status: 502 });
     }
 

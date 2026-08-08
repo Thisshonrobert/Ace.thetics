@@ -102,10 +102,23 @@ export default function ImageComponent({
       urlEndpoint={urlEndpoint}
       authenticator={authenticator}
     >
-      <div className={`relative ${className || ''}`} style={{
-        width: fill ? '100%' : width,
-        height: fill ? '100%' : height,
-      }}>
+      {/* The explicit width/height stay — call sites pass `h-auto w-auto
+          max-h-full max-w-full`, and without a definite size on this wrapper
+          those resolve circularly and collapse the image to 0x0.
+          `maxWidth/maxHeight: 100%` is what stops that fixed size escaping its
+          container: a `width={600}` product image used to force its grid track
+          to 600px on a 375px phone and push the page into horizontal scroll.
+          Capping it here means the declared size acts as an intrinsic hint
+          rather than a floor. */}
+      <div
+        className={`relative ${className || ''}`}
+        style={{
+          width: fill ? '100%' : width,
+          height: fill ? '100%' : height,
+          maxWidth: '100%',
+          maxHeight: '100%',
+        }}
+      >
         <IKImage
           path={imagePath}
           alt={alt}
@@ -114,7 +127,11 @@ export default function ImageComponent({
           className={`${fill ? 'object-cover w-full h-full' : ''} ${className || ''}`}
           transformation={processedTransformation}
           lqip={lqip}
-          loading={loading}
+          // `priority` was accepted as a prop but never forwarded, so marking
+          // an image priority did nothing. An above-the-fold image must not be
+          // lazy-loaded, so priority now wins over any `loading` passed in.
+          loading={priority ? undefined : loading}
+          fetchPriority={priority ? 'high' : undefined}
         />
       </div>
     </ImageKitProvider>

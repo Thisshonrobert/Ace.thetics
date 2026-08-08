@@ -328,11 +328,12 @@ export default function CelebritySearch() {
         />
     )
 
-    // Explicit widths instead of `w-full max-w-*`: this sits in a
-    // shrink-to-fit flex item in the navbar, so `w-full` resolved circularly
-    // and collapsed the field to roughly its placeholder width.
+    // Shrinkable rather than a fixed `md:w-80 lg:w-96`. The navbar centres its
+    // title on a symmetric grid, so this column has to be able to give up
+    // width as the viewport narrows — a fixed width would force the grid wider
+    // than the screen and shove the title off-centre.
     return (
-        <div className="relative w-auto md:w-80 lg:w-96">
+        <div className="relative w-auto min-w-0 md:w-full md:max-w-sm lg:max-w-md">
             {/* Desktop field */}
             <div className="relative hidden md:block">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

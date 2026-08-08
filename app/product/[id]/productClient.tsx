@@ -347,10 +347,16 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
         </ol>
       </nav>
 
+      {/* `min-w-0` on the grid children: grid tracks size to min-content by
+          default, so any child wider than the viewport drags the whole column
+          — and therefore the page — with it. */}
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
         {/* ---------- Gallery ---------- */}
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-gray-100 sm:p-10">
+        <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
+          {/* Portrait on phones, square from `sm` up. Garment shots are almost
+              always taller than they are wide, so a square box on a narrow
+              screen wasted a band of empty space above and below the product. */}
+          <div className="flex aspect-[4/5] items-center justify-center overflow-hidden rounded-2xl bg-white p-4 ring-1 ring-gray-100 sm:aspect-square sm:p-10">
             <ImageComponent
               src={product.imageUrl}
               alt={`${product.brandname} ${product.seoname}`}
@@ -374,7 +380,7 @@ export default function ProductPageClient({ productId }: ProductPageClientProps)
         </div>
 
         {/* ---------- Details ---------- */}
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-col">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <p className="font-poppins text-sm font-semibold uppercase tracking-[0.18em] text-gray-900">
